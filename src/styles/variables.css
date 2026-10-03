@@ -1,0 +1,122 @@
+:root {
+  /* High-End Enterprise Slate & Indigo Navigation Palette */
+  --color-topbar-bg: #0b1120;
+  --color-topbar-surface: #111827;
+  --color-topbar-border: #1e293b;
+  --color-topbar-hover: rgba(255, 255, 255, 0.08);
+  --color-topbar-active: rgba(59, 130, 246, 0.16);
+  --color-topbar-active-border: rgba(96, 165, 250, 0.4);
+  --color-topbar-text: #94a3b8;
+  --color-topbar-text-hover: #f1f5f9;
+  --color-topbar-text-active: #60a5fa;
+
+  /* Legacy Sidebar (kept for mobile drawer) */
+  --color-sidebar-bg: #0b1120;
+  --color-sidebar-hover: #1e293b;
+  --color-sidebar-active: #2563eb;
+  --color-sidebar-border: #1e293b;
+  --color-sidebar-text: #94a3b8;
+  --color-sidebar-text-active: #ffffff;
+  --color-sidebar-header: #f8fafc;
+
+  /* App Canvas & Surfaces */
+  --color-bg-app: #f8fafc;
+  --color-bg-surface: #ffffff;
+  --color-bg-surface-secondary: #f1f5f9;
+  --color-bg-surface-tertiary: #e2e8f0;
+  
+  /* Primary Brand & Gradients */
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-primary-light: #eff6ff;
+  --color-primary-focus: rgba(37, 99, 235, 0.2);
+  --gradient-primary: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+  --gradient-accent: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  --gradient-subtle: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 100%);
+
+  /* Semantic Status Colors */
+  --color-success: #10b981;
+  --color-success-light: #ecfdf5;
+  --color-success-border: #a7f3d0;
+  --color-success-text: #065f46;
+
+  --color-warning: #f59e0b;
+  --color-warning-light: #fffbeb;
+  --color-warning-border: #fde68a;
+  --color-warning-text: #92400e;
+
+  --color-danger: #ef4444;
+  --color-danger-light: #fef2f2;
+  --color-danger-border: #fecaca;
+  --color-danger-text: #991b1b;
+
+  --color-info: #0284c7;
+  --color-info-light: #f0f9ff;
+  --color-info-border: #bae6fd;
+  --color-info-text: #0369a1;
+
+  /* Severity Specifics */
+  --sev-critical: #dc2626;
+  --sev-critical-bg: #fee2e2;
+  --sev-high: #ea580c;
+  --sev-high-bg: #ffedd5;
+  --sev-medium: #d97706;
+  --sev-medium-bg: #fef3c7;
+  --sev-low: #059669;
+  --sev-low-bg: #d1fae5;
+  --sev-none: #64748b;
+  --sev-none-bg: #f1f5f9;
+
+  /* Text & Typography */
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted: #64748b;
+  --color-text-inverse: #ffffff;
+
+  /* Borders & Dividers */
+  --color-border: #e2e8f0;
+  --color-border-hover: #cbd5e1;
+  --color-border-subtle: #f1f5f9;
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 10px 20px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+  --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+  --shadow-glow: 0 0 20px rgba(59, 130, 246, 0.35);
+
+  /* Radii */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+
+  /* Typography */
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', Consolas, Monaco, "Courier New", monospace;
+
+  /* Layout dimensions */
+  --topbar-height: 68px;
+  --subbar-height: 44px;
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 72px;
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="dark"] {
+  --color-bg-app: #090d16;
+  --color-bg-surface: #111827;
+  --color-bg-surface-secondary: #1f2937;
+  --color-bg-surface-tertiary: #374151;
+  --color-text-primary: #f9fafb;
+  --color-text-secondary: #9ca3af;
+  --color-text-muted: #6b7280;
+  --color-border: #1f2937;
+  --color-border-hover: #374151;
+  --color-border-subtle: #182234;
+}

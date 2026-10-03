@@ -1,0 +1,23 @@
+# Secrets / local overrides
+.env
+.env.local
+.env.*.local
+
+# Dependencies & build output
+node_modules/
+dist/
+dist-ssr/
+*.local
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Vercel CLI
+.vercel
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
