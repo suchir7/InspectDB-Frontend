@@ -1,6 +1,6 @@
 # InspectDB Frontend
 
-React 19 + TypeScript + Vite frontend for **InspectDB**, an inspection report management system built on Amazon DocumentDB. The API, infrastructure, and full project documentation live in the backend repository.
+React 19 + TypeScript + Vite frontend for **InspectDB**, an inspection report management system built on Amazon DocumentDB. The API, infrastructure, and full project documentation live in [suchir7/InspectDB-Backend](https://github.com/suchir7/InspectDB-Backend).
 
 ## Local development
 
@@ -10,7 +10,7 @@ cp .env.example .env     # VITE_API_BASE_URL=http://localhost:8000/api
 npm run dev              # http://localhost:5173
 ```
 
-Run the backend locally on port 8000 (see the backend repository's README).
+Run the backend locally on port 8000 (see the [backend README](https://github.com/suchir7/InspectDB-Backend#readme)).
 
 ## Deployment (Vercel, free Hobby plan)
 
