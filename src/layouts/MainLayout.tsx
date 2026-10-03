@@ -52,7 +52,7 @@ export const MainLayout: React.FC = () => {
       <div
         style={{
           backgroundColor: '#ffffff',
-          borderBottom: '1px solid #e2e8f0',
+          borderBottom: '1px solid #dfe3ec',
           padding: '0.65rem 1.5rem',
           display: 'flex',
           alignItems: 'center',
@@ -61,13 +61,13 @@ export const MainLayout: React.FC = () => {
           boxShadow: '0 1px 2px rgba(0, 0, 0, 0.03)'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#64748b' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#67718a' }}>
           <Link
             to="/dashboard"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              color: '#64748b',
+              color: '#67718a',
               textDecoration: 'none',
               transition: 'color 0.15s'
             }}
@@ -77,13 +77,13 @@ export const MainLayout: React.FC = () => {
           </Link>
           {breadcrumbs.map((crumb, idx) => (
             <React.Fragment key={crumb.path}>
-              <ChevronRight size={12} color="#94a3b8" />
+              <ChevronRight size={12} color="#8e97ac" />
               {idx === breadcrumbs.length - 1 ? (
-                <span style={{ fontWeight: 600, color: '#0f172a' }}>{crumb.label}</span>
+                <span style={{ fontWeight: 600, color: '#0a1733' }}>{crumb.label}</span>
               ) : (
                 <Link
                   to={crumb.path}
-                  style={{ color: '#64748b', textDecoration: 'none', transition: 'color 0.15s' }}
+                  style={{ color: '#67718a', textDecoration: 'none', transition: 'color 0.15s' }}
                   className="breadcrumb-link"
                 >
                   {crumb.label}
@@ -95,13 +95,13 @@ export const MainLayout: React.FC = () => {
 
         {/* Quick Context Indicators */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }} className="subheader-quick-stats">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#475569', fontSize: '0.75rem' }}>
-            <Sparkles size={13} color="#6366f1" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#4e5871', fontSize: '0.75rem' }}>
+            <Sparkles size={13} color="#24447f" />
             <span>Gemini AI Engine: <strong>Active</strong></span>
           </div>
-          <div style={{ width: 1, height: 14, backgroundColor: '#e2e8f0' }} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#475569', fontSize: '0.75rem' }}>
-            <Database size={13} color="#2563eb" />
+          <div style={{ width: 1, height: 14, backgroundColor: '#dfe3ec' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#4e5871', fontSize: '0.75rem' }}>
+            <Database size={13} color="#2459c9" />
             <span>Target: <strong>Amazon DocumentDB 5.0</strong></span>
           </div>
         </div>
@@ -124,7 +124,7 @@ export const MainLayout: React.FC = () => {
       {/* Subtle Footer */}
       <footer
         style={{
-          borderTop: '1px solid #e2e8f0',
+          borderTop: '1px solid #dfe3ec',
           backgroundColor: '#ffffff',
           padding: '1.25rem 1.5rem',
           marginTop: 'auto'
@@ -138,12 +138,12 @@ export const MainLayout: React.FC = () => {
             alignItems: 'center',
             justifyContent: 'space-between',
             fontSize: '0.8rem',
-            color: '#64748b'
+            color: '#67718a'
           }}
           className="app-footer-inner"
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <ShieldCheck size={16} color="#2563eb" />
+            <ShieldCheck size={16} color="#2459c9" />
             <span><strong>InspectDB</strong> &mdash; Enterprise Inspection Management & Compatibility Platform</span>
           </div>
           <div>
@@ -154,7 +154,7 @@ export const MainLayout: React.FC = () => {
 
       <style>{`
         .breadcrumb-link:hover, .breadcrumb-home-link:hover {
-          color: #2563eb !important;
+          color: #2459c9 !important;
         }
         @media (max-width: 768px) {
           .subheader-quick-stats {

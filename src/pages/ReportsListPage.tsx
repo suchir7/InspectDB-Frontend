@@ -329,10 +329,13 @@ export const ReportsListPage: React.FC = () => {
                         fontSize: '0.75rem',
                         fontWeight: 600,
                         backgroundColor: 'var(--color-bg-surface-secondary)',
-                        padding: '0.2rem 0.5rem',
-                        borderRadius: 'var(--radius-sm)'
+                        border: '1px solid var(--color-border)',
+                        color: 'var(--color-text-secondary)',
+                        padding: '0.2rem 0.55rem',
+                        borderRadius: 'var(--radius-full)',
+                        whiteSpace: 'nowrap'
                       }}>
-                        {report.findings.length} findings
+                        {report.findings.length} {report.findings.length === 1 ? 'finding' : 'findings'}
                       </span>
                     </td>
                     <td style={{ textAlign: 'right' }}>
@@ -442,8 +445,8 @@ export const ReportsListPage: React.FC = () => {
             width: 40,
             height: 40,
             borderRadius: 'var(--radius-full)',
-            backgroundColor: '#fee2e2',
-            color: '#dc2626',
+            backgroundColor: '#fbeaea',
+            color: '#c23b3b',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',

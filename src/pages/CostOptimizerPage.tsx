@@ -245,9 +245,9 @@ export const CostOptimizerPage: React.FC = () => {
         justifyContent: 'space-between',
         padding: '0.75rem 1.25rem',
         borderRadius: 'var(--radius-lg)',
-        backgroundColor: '#0f172a',
-        border: '1px solid #334155',
-        color: '#f8fafc',
+        backgroundColor: '#0a1733',
+        border: '1px solid #36415a',
+        color: '#f5f7fa',
         fontSize: '0.825rem',
         gap: '0.75rem'
       }}>
@@ -255,7 +255,7 @@ export const CostOptimizerPage: React.FC = () => {
           <Link
             to="/cost-monitoring"
             style={{
-              color: '#38bdf8',
+              color: '#6b93ea',
               fontWeight: 600,
               display: 'inline-flex',
               alignItems: 'center',
@@ -265,9 +265,9 @@ export const CostOptimizerPage: React.FC = () => {
           >
             <span>← Back to Cost Monitoring Dashboard</span>
           </Link>
-          <span style={{ color: '#475569' }}>|</span>
-          <span style={{ color: '#94a3b8' }}>Target Bottleneck:</span>
-          <strong style={{ color: '#f8fafc' }}>Small Workload vs. High Cluster Baseline Cost</strong>
+          <span style={{ color: '#4e5871' }}>|</span>
+          <span style={{ color: '#8e97ac' }}>Target Bottleneck:</span>
+          <strong style={{ color: '#f5f7fa' }}>Small Workload vs. High Cluster Baseline Cost</strong>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
@@ -294,9 +294,9 @@ export const CostOptimizerPage: React.FC = () => {
             fontWeight: 700,
             padding: '0.2rem 0.6rem',
             borderRadius: 'var(--radius-full)',
-            backgroundColor: '#f5f3ff',
-            color: '#7c3aed',
-            border: '1px solid #ddd6fe',
+            backgroundColor: '#fcf8ed',
+            color: '#a9801e',
+            border: '1px solid #f0e2b8',
             display: 'inline-flex',
             alignItems: 'center',
             gap: '0.3rem'
@@ -333,7 +333,7 @@ export const CostOptimizerPage: React.FC = () => {
             <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>
               Current Workload Intensity
             </div>
-            <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#0284c7', marginTop: '0.25rem' }}>
+            <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#2459c9', marginTop: '0.25rem' }}>
               Low Workload
             </div>
             <p style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)', marginTop: '0.35rem', lineHeight: 1.4 }}>
@@ -351,14 +351,14 @@ export const CostOptimizerPage: React.FC = () => {
             <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>
               Optimization Status
             </div>
-            <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#059669', marginTop: '0.25rem' }}>
+            <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#1e8e62', marginTop: '0.25rem' }}>
               3 Opportunities Detected
             </div>
-            <p style={{ fontSize: '0.78rem', color: '#065f46', marginTop: '0.35rem', lineHeight: 1.4 }}>
+            <p style={{ fontSize: '0.78rem', color: '#13623f', marginTop: '0.35rem', lineHeight: 1.4 }}>
               Potential savings up to <strong>~$44.46/mo (~76% reduction)</strong> via scheduled auto-stop and right-sizing.
             </p>
           </div>
-          <div style={{ marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid var(--color-border)', fontSize: '0.72rem', color: '#059669', fontWeight: 600 }}>
+          <div style={{ marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid var(--color-border)', fontSize: '0.72rem', color: '#1e8e62', fontWeight: 600 }}>
             ✓ Evidence-Based Rate Card Verification
           </div>
         </div>
@@ -378,7 +378,7 @@ export const CostOptimizerPage: React.FC = () => {
               </button>
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginTop: '0.25rem' }}>
-              <span style={{ fontSize: '1.85rem', fontWeight: 800, color: calculateScoreDetails.totalScore >= 75 ? '#059669' : calculateScoreDetails.totalScore >= 50 ? '#d97706' : '#dc2626' }}>
+              <span style={{ fontSize: '2.15rem', fontWeight: 600, fontFamily: 'var(--font-display)', letterSpacing: '-0.01em', color: calculateScoreDetails.totalScore >= 75 ? '#1e8e62' : calculateScoreDetails.totalScore >= 50 ? '#a9801e' : '#c23b3b' }}>
                 {calculateScoreDetails.totalScore}/100
               </span>
               <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-secondary)' }}>
@@ -389,7 +389,7 @@ export const CostOptimizerPage: React.FC = () => {
               <div style={{
                 width: `${calculateScoreDetails.totalScore}%`,
                 height: '100%',
-                backgroundColor: calculateScoreDetails.totalScore >= 75 ? '#10b981' : calculateScoreDetails.totalScore >= 50 ? '#f59e0b' : '#ef4444',
+                backgroundColor: calculateScoreDetails.totalScore >= 75 ? '#22a06b' : calculateScoreDetails.totalScore >= 50 ? '#c9a23a' : '#d04545',
                 transition: 'width 0.4s ease'
               }} />
             </div>
@@ -420,7 +420,7 @@ export const CostOptimizerPage: React.FC = () => {
       </div>
 
       {/* Visual Governance Workflow: How InspectDB Optimizes */}
-      <div className="card" style={{ padding: '1.25rem', backgroundColor: '#f8fafc' }}>
+      <div className="card" style={{ padding: '1.25rem', backgroundColor: '#f5f7fa' }}>
         <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
           Cost Optimization Governance & Recommendation Workflow
         </div>
@@ -438,17 +438,17 @@ export const CostOptimizerPage: React.FC = () => {
           fontSize: '0.75rem',
           fontWeight: 600
         }}>
-          <span style={{ padding: '0.35rem 0.6rem', borderRadius: '4px', backgroundColor: '#f1f5f9', color: '#334155' }}>1. Workload Input / CloudWatch</span>
-          <span style={{ color: '#94a3b8' }}>➔</span>
-          <span style={{ padding: '0.35rem 0.6rem', borderRadius: '4px', backgroundColor: '#f1f5f9', color: '#334155' }}>2. Workload Analysis</span>
-          <span style={{ color: '#94a3b8' }}>➔</span>
-          <span style={{ padding: '0.35rem 0.6rem', borderRadius: '4px', backgroundColor: '#f1f5f9', color: '#334155' }}>3. Cost Rate Card Modeling</span>
-          <span style={{ color: '#94a3b8' }}>➔</span>
-          <span style={{ padding: '0.35rem 0.6rem', borderRadius: '4px', backgroundColor: '#fef3c7', color: '#92400e' }}>4. Underutilization Detection</span>
-          <span style={{ color: '#94a3b8' }}>➔</span>
-          <span style={{ padding: '0.35rem 0.6rem', borderRadius: '4px', backgroundColor: '#ecfdf5', color: '#065f46' }}>5. Evidence-Based Recs</span>
-          <span style={{ color: '#94a3b8' }}>➔</span>
-          <span style={{ padding: '0.35rem 0.6rem', borderRadius: '4px', backgroundColor: '#e0e7ff', color: '#4338ca' }}>6. User Review & Decision</span>
+          <span style={{ padding: '0.35rem 0.6rem', borderRadius: '4px', backgroundColor: '#eceff5', color: '#36415a' }}>1. Workload Input / CloudWatch</span>
+          <span style={{ color: '#8e97ac' }}>➔</span>
+          <span style={{ padding: '0.35rem 0.6rem', borderRadius: '4px', backgroundColor: '#eceff5', color: '#36415a' }}>2. Workload Analysis</span>
+          <span style={{ color: '#8e97ac' }}>➔</span>
+          <span style={{ padding: '0.35rem 0.6rem', borderRadius: '4px', backgroundColor: '#eceff5', color: '#36415a' }}>3. Cost Rate Card Modeling</span>
+          <span style={{ color: '#8e97ac' }}>➔</span>
+          <span style={{ padding: '0.35rem 0.6rem', borderRadius: '4px', backgroundColor: '#fbf4e2', color: '#7a5a12' }}>4. Underutilization Detection</span>
+          <span style={{ color: '#8e97ac' }}>➔</span>
+          <span style={{ padding: '0.35rem 0.6rem', borderRadius: '4px', backgroundColor: '#e9f6f0', color: '#13623f' }}>5. Evidence-Based Recs</span>
+          <span style={{ color: '#8e97ac' }}>➔</span>
+          <span style={{ padding: '0.35rem 0.6rem', borderRadius: '4px', backgroundColor: '#e6eefc', color: '#122650' }}>6. User Review & Decision</span>
         </div>
 
         <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.5rem', marginBottom: 0 }}>
@@ -461,7 +461,7 @@ export const CostOptimizerPage: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
           <div>
             <h3 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <TrendingDown size={18} color="#059669" />
+              <TrendingDown size={18} color="#1e8e62" />
               Evidence-Based Optimization Opportunities
             </h3>
             <p style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginTop: '0.15rem' }}>
@@ -489,8 +489,8 @@ export const CostOptimizerPage: React.FC = () => {
                     fontWeight: 700,
                     padding: '0.15rem 0.5rem',
                     borderRadius: '4px',
-                    backgroundColor: '#fee2e2',
-                    color: '#dc2626'
+                    backgroundColor: '#fbeaea',
+                    color: '#c23b3b'
                   }}>
                     HIGH SAVINGS IMPACT
                   </span>
@@ -502,7 +502,7 @@ export const CostOptimizerPage: React.FC = () => {
               </div>
 
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#059669' }}>
+                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e8e62' }}>
                   Save ~$44.46/mo
                 </div>
                 <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
@@ -573,8 +573,8 @@ export const CostOptimizerPage: React.FC = () => {
                     fontWeight: 700,
                     padding: '0.15rem 0.5rem',
                     borderRadius: '4px',
-                    backgroundColor: '#e0e7ff',
-                    color: '#4338ca'
+                    backgroundColor: '#e6eefc',
+                    color: '#122650'
                   }}>
                     PHASE 1 STRATEGY
                   </span>
@@ -586,7 +586,7 @@ export const CostOptimizerPage: React.FC = () => {
               </div>
 
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#059669' }}>
+                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e8e62' }}>
                   $0.00 /mo
                 </div>
                 <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
@@ -680,7 +680,7 @@ export const CostOptimizerPage: React.FC = () => {
                       <td style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--color-text-primary)' }}>
                         {fmt(opt.monthly_cost)}
                       </td>
-                      <td style={{ fontSize: '0.8rem', fontWeight: 700, color: diffVs247 > 0 ? '#059669' : '#64748b' }}>
+                      <td style={{ fontSize: '0.8rem', fontWeight: 700, color: diffVs247 > 0 ? '#1e8e62' : '#67718a' }}>
                         {diffVs247 > 0 ? `+${fmt(diffVs247)}/mo` : 'Baseline'}
                       </td>
                     </tr>
@@ -694,10 +694,10 @@ export const CostOptimizerPage: React.FC = () => {
 
       {/* Gemini AI Custom Advisor Findings */}
       {analysis && (
-        <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #8b5cf6' }}>
+        <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #c9a23a' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Sparkles size={18} color="#8b5cf6" />
+              <Sparkles size={18} color="#c9a23a" />
               <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0 }}>
                 Gemini 2.5 Flash Deployment Assessment
               </h3>
@@ -726,8 +726,8 @@ export const CostOptimizerPage: React.FC = () => {
                     fontSize: '0.68rem',
                     padding: '0.1rem 0.4rem',
                     borderRadius: '4px',
-                    backgroundColor: rec.impact === 'high' ? '#fee2e2' : '#f0f9ff',
-                    color: rec.impact === 'high' ? '#dc2626' : '#0284c7',
+                    backgroundColor: rec.impact === 'high' ? '#fbeaea' : '#f3f7fe',
+                    color: rec.impact === 'high' ? '#c23b3b' : '#2459c9',
                     fontWeight: 700
                   }}>
                     {rec.impact.toUpperCase()} IMPACT
@@ -736,7 +736,7 @@ export const CostOptimizerPage: React.FC = () => {
                 <p style={{ color: 'var(--color-text-secondary)', lineHeight: 1.4, margin: '0 0 0.5rem 0' }}>
                   {rec.explanation}
                 </p>
-                <div style={{ color: '#059669', fontWeight: 600 }}>
+                <div style={{ color: '#1e8e62', fontWeight: 600 }}>
                   Proposed Action: {rec.proposed_action}
                 </div>
               </div>

@@ -123,9 +123,9 @@ export const RegisterPage: React.FC = () => {
         {/* Error Alert */}
         {error && (
           <div className="auth-error-box">
-            <AlertCircle size={16} style={{ flexShrink: 0, marginTop: 2, color: '#fb7185' }} />
+            <AlertCircle size={16} style={{ flexShrink: 0, marginTop: 2, color: '#e07a7a' }} />
             <div>
-              <div style={{ fontWeight: 600, color: '#ffe4e6' }}>Registration Error</div>
+              <div style={{ fontWeight: 600, color: '#fbeaea' }}>Registration Error</div>
               <div style={{ fontSize: '0.75rem', marginTop: 2 }}>{error}</div>
             </div>
           </div>
@@ -197,15 +197,15 @@ export const RegisterPage: React.FC = () => {
             {/* Password Requirement Chips */}
             <div className="auth-req-row">
               <span className={`auth-req-chip ${hasMinLength ? 'active' : ''}`}>
-                <CheckCircle2 size={11} color={hasMinLength ? '#10b981' : '#64748b'} />
+                <CheckCircle2 size={11} color={hasMinLength ? '#22a06b' : '#67718a'} />
                 8+ chars
               </span>
               <span className={`auth-req-chip ${hasLetter ? 'active' : ''}`}>
-                <CheckCircle2 size={11} color={hasLetter ? '#10b981' : '#64748b'} />
+                <CheckCircle2 size={11} color={hasLetter ? '#22a06b' : '#67718a'} />
                 1+ letter
               </span>
               <span className={`auth-req-chip ${hasNumber ? 'active' : ''}`}>
-                <CheckCircle2 size={11} color={hasNumber ? '#10b981' : '#64748b'} />
+                <CheckCircle2 size={11} color={hasNumber ? '#22a06b' : '#67718a'} />
                 1+ number
               </span>
             </div>
@@ -226,12 +226,12 @@ export const RegisterPage: React.FC = () => {
                 placeholder="Re-enter password"
                 className="auth-input"
                 style={{
-                  borderColor: confirmPassword && !passwordsMatch ? '#f43f5e' : confirmPassword && passwordsMatch ? '#10b981' : undefined
+                  borderColor: confirmPassword && !passwordsMatch ? '#c23b3b' : confirmPassword && passwordsMatch ? '#22a06b' : undefined
                 }}
               />
             </div>
             {confirmPassword && !passwordsMatch && (
-              <div style={{ fontSize: '0.72rem', color: '#fb7185', marginTop: '0.25rem' }}>
+              <div style={{ fontSize: '0.72rem', color: '#e07a7a', marginTop: '0.25rem' }}>
                 Passwords do not match.
               </div>
             )}

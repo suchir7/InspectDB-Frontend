@@ -214,25 +214,25 @@ export const CostMonitoringPage: React.FC = () => {
         justifyContent: 'space-between',
         padding: '0.75rem 1.25rem',
         borderRadius: 'var(--radius-lg)',
-        backgroundColor: '#0f172a',
-        border: '1px solid #334155',
-        color: '#f8fafc',
+        backgroundColor: '#0a1733',
+        border: '1px solid #36415a',
+        color: '#f5f7fa',
         fontSize: '0.825rem',
         gap: '0.75rem'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Server size={15} color="#38bdf8" />
-            <span style={{ color: '#94a3b8' }}>Target Engine:</span>
-            <strong style={{ color: '#f8fafc' }}>Amazon DocumentDB (v4.0)</strong>
+            <Server size={15} color="#6b93ea" />
+            <span style={{ color: '#8e97ac' }}>Target Engine:</span>
+            <strong style={{ color: '#f5f7fa' }}>Amazon DocumentDB (v4.0)</strong>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ color: '#94a3b8' }}>AWS Region:</span>
+            <span style={{ color: '#8e97ac' }}>AWS Region:</span>
             <span style={{
               padding: '0.15rem 0.5rem',
               borderRadius: '4px',
-              backgroundColor: '#1e293b',
-              color: '#38bdf8',
+              backgroundColor: '#1f2a44',
+              color: '#6b93ea',
               fontWeight: 600,
               fontSize: '0.75rem'
             }}>
@@ -240,12 +240,12 @@ export const CostMonitoringPage: React.FC = () => {
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ color: '#94a3b8' }}>Mode:</span>
+            <span style={{ color: '#8e97ac' }}>Mode:</span>
             <span style={{
               padding: '0.15rem 0.5rem',
               borderRadius: '4px',
               backgroundColor: '#3b82f620',
-              color: '#60a5fa',
+              color: '#6b93ea',
               fontWeight: 600,
               fontSize: '0.75rem',
               border: '1px solid #3b82f640'
@@ -259,7 +259,7 @@ export const CostMonitoringPage: React.FC = () => {
           <button
             onClick={fetchMonitoringData}
             className="btn btn-secondary btn-sm"
-            style={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#f8fafc', padding: '0.25rem 0.6rem' }}
+            style={{ backgroundColor: '#1f2a44', borderColor: '#36415a', color: '#f5f7fa', padding: '0.25rem 0.6rem' }}
           >
             <RefreshCw size={13} className={loadingMetrics ? 'spin' : ''} />
             <span>Sync Metrics</span>
@@ -287,9 +287,9 @@ export const CostMonitoringPage: React.FC = () => {
               fontWeight: 700,
               padding: '0.2rem 0.6rem',
               borderRadius: 'var(--radius-full)',
-              backgroundColor: '#ecfdf5',
-              color: '#059669',
-              border: '1px solid #a7f3d0',
+              backgroundColor: '#e9f6f0',
+              color: '#1e8e62',
+              border: '1px solid #b9e2cf',
               display: 'inline-flex',
               alignItems: 'center',
               gap: '0.3rem'
@@ -317,7 +317,7 @@ export const CostMonitoringPage: React.FC = () => {
             className="btn btn-secondary btn-sm"
             style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
           >
-            <Sparkles size={14} color="#8b5cf6" />
+            <Sparkles size={14} color="#c9a23a" />
             <span>{loadingAi ? 'Analyzing Gemini...' : 'Run Gemini Analyst'}</span>
           </button>
         </div>
@@ -332,12 +332,12 @@ export const CostMonitoringPage: React.FC = () => {
       {/* CORE BOTTLENECK DIAGNOSIS: Workload vs Cluster Cost Analysis */}
       <div className="card" style={{
         padding: '1.25rem',
-        backgroundColor: isUnderutilized ? '#fffbeb' : 'var(--color-bg-surface)',
-        border: isUnderutilized ? '1px solid #fde68a' : '1px solid var(--color-border)'
+        backgroundColor: isUnderutilized ? '#fbf5e4' : 'var(--color-bg-surface)',
+        border: isUnderutilized ? '1px solid #eddba6' : '1px solid var(--color-border)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <AlertOctagon size={18} color={isUnderutilized ? '#d97706' : '#2563eb'} />
+            <AlertOctagon size={18} color={isUnderutilized ? '#a9801e' : '#2459c9'} />
             <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0, color: 'var(--color-text-primary)' }}>
               Workload Intensity vs. Provisioned Cluster Cost Analysis
             </h3>
@@ -347,9 +347,9 @@ export const CostMonitoringPage: React.FC = () => {
             fontWeight: 700,
             padding: '0.25rem 0.65rem',
             borderRadius: 'var(--radius-full)',
-            backgroundColor: isUnderutilized ? '#fef3c7' : '#dcfce7',
-            color: isUnderutilized ? '#92400e' : '#15803d',
-            border: isUnderutilized ? '1px solid #fcd34d' : '1px solid #86efac'
+            backgroundColor: isUnderutilized ? '#fbf4e2' : '#e7f5ee',
+            color: isUnderutilized ? '#7a5a12' : '#176b4a',
+            border: isUnderutilized ? '1px solid #e6cf8f' : '1px solid #8fd7b5'
           }}>
             {isUnderutilized ? '⚠️ High Cost / Low Workload Disconnect Detected' : '✓ Workload Sizing Optimal'}
           </span>
@@ -388,7 +388,7 @@ export const CostMonitoringPage: React.FC = () => {
             <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>
               Provisioned Instance Baseline
             </div>
-            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#dc2626', marginTop: '0.25rem' }}>
+            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#c23b3b', marginTop: '0.25rem' }}>
               ${baseline247Compute.toFixed(2)}/mo
             </div>
             <div style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)', marginTop: '0.35rem', lineHeight: 1.4 }}>
@@ -400,16 +400,16 @@ export const CostMonitoringPage: React.FC = () => {
           <div style={{
             padding: '1rem',
             borderRadius: 'var(--radius-md)',
-            backgroundColor: '#ecfdf5',
-            border: '1px solid #a7f3d0'
+            backgroundColor: '#e9f6f0',
+            border: '1px solid #b9e2cf'
           }}>
-            <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#065f46', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#13623f', textTransform: 'uppercase' }}>
               Scheduled Development Sizing
             </div>
-            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#059669', marginTop: '0.25rem' }}>
+            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#1e8e62', marginTop: '0.25rem' }}>
               $13.98/mo <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>(~76% Savings)</span>
             </div>
-            <div style={{ fontSize: '0.78rem', color: '#065f46', marginTop: '0.35rem', lineHeight: 1.4 }}>
+            <div style={{ fontSize: '0.78rem', color: '#13623f', marginTop: '0.35rem', lineHeight: 1.4 }}>
               Automating 8h/weekday start/stop (160h/mo) matches actual developer activity, eliminating 570 idle hours per month.
             </div>
           </div>
@@ -420,14 +420,14 @@ export const CostMonitoringPage: React.FC = () => {
           marginTop: '1rem',
           padding: '0.75rem 1rem',
           borderRadius: 'var(--radius-md)',
-          backgroundColor: isUnderutilized ? '#fef3c7' : 'var(--color-bg-surface-secondary)',
+          backgroundColor: isUnderutilized ? '#fbf4e2' : 'var(--color-bg-surface-secondary)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: '0.5rem'
         }}>
-          <div style={{ fontSize: '0.825rem', color: isUnderutilized ? '#92400e' : 'var(--color-text-primary)' }}>
+          <div style={{ fontSize: '0.825rem', color: isUnderutilized ? '#7a5a12' : 'var(--color-text-primary)' }}>
             💡 <strong>Root Bottleneck:</strong> Small academic workloads on AWS DocumentDB suffer from fixed instance hourly rates. Start/stop automation or local in-memory execution resolves this cost overhead.
           </div>
           <Link
@@ -455,7 +455,7 @@ export const CostMonitoringPage: React.FC = () => {
                 <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>
                   Estimated Monthly Cost
                 </div>
-                <div style={{ fontSize: '1.85rem', fontWeight: 800, color: 'var(--color-text-primary)', marginTop: '0.2rem' }}>
+                <div style={{ fontSize: '2.15rem', fontWeight: 600, fontFamily: 'var(--font-display)', letterSpacing: '-0.01em', color: 'var(--color-text-primary)', marginTop: '0.2rem' }}>
                   {fmt(currentCost)}
                 </div>
               </div>
@@ -489,7 +489,7 @@ export const CostMonitoringPage: React.FC = () => {
                 <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>
                   Workload Intensity
                 </div>
-                <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#0284c7', marginTop: '0.2rem' }}>
+                <div style={{ fontSize: '2.15rem', fontWeight: 600, fontFamily: 'var(--font-display)', letterSpacing: '-0.01em', color: '#2459c9', marginTop: '0.2rem' }}>
                   Low
                 </div>
               </div>
@@ -497,11 +497,11 @@ export const CostMonitoringPage: React.FC = () => {
                 width: 40,
                 height: 40,
                 borderRadius: 'var(--radius-md)',
-                backgroundColor: '#f0f9ff',
+                backgroundColor: '#f3f7fe',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#0284c7'
+                color: '#2459c9'
               }}>
                 <Activity size={20} />
               </div>
@@ -523,7 +523,7 @@ export const CostMonitoringPage: React.FC = () => {
                 <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>
                   Storage Allocation
                 </div>
-                <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#7c3aed', marginTop: '0.2rem' }}>
+                <div style={{ fontSize: '2.15rem', fontWeight: 600, fontFamily: 'var(--font-display)', letterSpacing: '-0.01em', color: '#a9801e', marginTop: '0.2rem' }}>
                   {workload.data_storage_gb} GB
                 </div>
               </div>
@@ -531,11 +531,11 @@ export const CostMonitoringPage: React.FC = () => {
                 width: 40,
                 height: 40,
                 borderRadius: 'var(--radius-md)',
-                backgroundColor: '#f5f3ff',
+                backgroundColor: '#fcf8ed',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#7c3aed'
+                color: '#a9801e'
               }}>
                 <HardDrive size={20} />
               </div>
@@ -557,7 +557,7 @@ export const CostMonitoringPage: React.FC = () => {
                 <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>
                   Identified Optimization
                 </div>
-                <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#059669', marginTop: '0.2rem' }}>
+                <div style={{ fontSize: '2.15rem', fontWeight: 600, fontFamily: 'var(--font-display)', letterSpacing: '-0.01em', color: '#1e8e62', marginTop: '0.2rem' }}>
                   {fmt(estimate?.potential_monthly_savings)}
                 </div>
               </div>
@@ -565,16 +565,16 @@ export const CostMonitoringPage: React.FC = () => {
                 width: 40,
                 height: 40,
                 borderRadius: 'var(--radius-md)',
-                backgroundColor: '#ecfdf5',
+                backgroundColor: '#e9f6f0',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#059669'
+                color: '#1e8e62'
               }}>
                 <Zap size={20} />
               </div>
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#065f46', marginTop: '0.5rem', fontWeight: 600 }}>
+            <div style={{ fontSize: '0.75rem', color: '#13623f', marginTop: '0.5rem', fontWeight: 600 }}>
               {estimate?.cost_health?.potential_optimization_percent || 76}% potential monthly reduction
             </div>
           </div>
@@ -722,8 +722,8 @@ export const CostMonitoringPage: React.FC = () => {
                     fontWeight: 700,
                     padding: '0.15rem 0.5rem',
                     borderRadius: '4px',
-                    backgroundColor: d.impact_level === 'High' ? '#fee2e2' : '#f0f9ff',
-                    color: d.impact_level === 'High' ? '#dc2626' : '#0284c7'
+                    backgroundColor: d.impact_level === 'High' ? '#fbeaea' : '#f3f7fe',
+                    color: d.impact_level === 'High' ? '#c23b3b' : '#2459c9'
                   }}>
                     {d.impact_level} Impact
                   </span>
@@ -742,7 +742,7 @@ export const CostMonitoringPage: React.FC = () => {
                 backgroundColor: 'var(--color-bg-surface)',
                 border: '1px solid var(--color-border)',
                 fontSize: '0.72rem',
-                color: '#065f46'
+                color: '#13623f'
               }}>
                 💡 {d.optimization_opportunity}
               </div>
@@ -753,10 +753,10 @@ export const CostMonitoringPage: React.FC = () => {
 
       {/* Gemini AI Cost Insights Section */}
       {analysis && (
-        <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #8b5cf6' }}>
+        <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #c9a23a' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Sparkles size={18} color="#8b5cf6" />
+              <Sparkles size={18} color="#c9a23a" />
               <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0 }}>
                 Gemini 2.5 Flash Architectural Analysis
               </h3>
@@ -785,7 +785,7 @@ export const CostMonitoringPage: React.FC = () => {
                 <div style={{ color: 'var(--color-text-secondary)', lineHeight: 1.4 }}>
                   {opp.reason}
                 </div>
-                <div style={{ marginTop: '0.4rem', color: '#059669', fontWeight: 600 }}>
+                <div style={{ marginTop: '0.4rem', color: '#1e8e62', fontWeight: 600 }}>
                   Action: {opp.action}
                 </div>
               </div>
@@ -809,18 +809,18 @@ export const CostMonitoringPage: React.FC = () => {
                 Compare your current continuous uptime (<strong>{workload.monthly_uptime_hours} hrs/mo</strong>) against a scheduled development window (<strong>160 hrs/mo</strong>).
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <div style={{ padding: '1rem', borderRadius: 'var(--radius-md)', backgroundColor: '#fee2e2', border: '1px solid #fecaca' }}>
-                  <div style={{ fontSize: '0.72rem', color: '#991b1b', fontWeight: 700 }}>24/7 Provisioned Single-AZ</div>
-                  <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#dc2626', marginTop: '0.25rem' }}>$58.44/mo</div>
-                  <div style={{ fontSize: '0.75rem', color: '#991b1b', marginTop: '0.25rem' }}>730 hours continuous</div>
+                <div style={{ padding: '1rem', borderRadius: 'var(--radius-md)', backgroundColor: '#fbeaea', border: '1px solid #f1c9c9' }}>
+                  <div style={{ fontSize: '0.72rem', color: '#8e2525', fontWeight: 700 }}>24/7 Provisioned Single-AZ</div>
+                  <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#c23b3b', marginTop: '0.25rem' }}>$58.44/mo</div>
+                  <div style={{ fontSize: '0.75rem', color: '#8e2525', marginTop: '0.25rem' }}>730 hours continuous</div>
                 </div>
-                <div style={{ padding: '1rem', borderRadius: 'var(--radius-md)', backgroundColor: '#ecfdf5', border: '1px solid #a7f3d0' }}>
-                  <div style={{ fontSize: '0.72rem', color: '#065f46', fontWeight: 700 }}>Scheduled Dev (8h/weekday)</div>
-                  <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#059669', marginTop: '0.25rem' }}>$13.98/mo</div>
-                  <div style={{ fontSize: '0.75rem', color: '#065f46', marginTop: '0.25rem' }}>160 hours optimized</div>
+                <div style={{ padding: '1rem', borderRadius: 'var(--radius-md)', backgroundColor: '#e9f6f0', border: '1px solid #b9e2cf' }}>
+                  <div style={{ fontSize: '0.72rem', color: '#13623f', fontWeight: 700 }}>Scheduled Dev (8h/weekday)</div>
+                  <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#1e8e62', marginTop: '0.25rem' }}>$13.98/mo</div>
+                  <div style={{ fontSize: '0.75rem', color: '#13623f', marginTop: '0.25rem' }}>160 hours optimized</div>
                 </div>
               </div>
-              <div style={{ fontSize: '0.8rem', color: '#065f46', padding: '0.65rem', backgroundColor: '#ecfdf5', borderRadius: 'var(--radius-sm)' }}>
+              <div style={{ fontSize: '0.8rem', color: '#13623f', padding: '0.65rem', backgroundColor: '#e9f6f0', borderRadius: 'var(--radius-sm)' }}>
                 ✅ <strong>Simulated Monthly Savings: ~$44.46/mo (~76% reduction)</strong>. Note: This is an architectural simulation and does not modify AWS infrastructure.
               </div>
             </div>

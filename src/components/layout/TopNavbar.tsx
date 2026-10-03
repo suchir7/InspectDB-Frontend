@@ -72,10 +72,10 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
     { to: '/reports', label: 'Reports', icon: ClipboardList },
     { to: '/ai-assistant', label: 'AI Assistant', icon: Sparkles, badge: 'Gemini' },
     { to: '/nested-query', label: 'Query Explorer', icon: SearchCode },
-    { to: '/cost-optimizer', label: 'Cost Optimizer', icon: Calculator },
   ];
 
   const secondaryNavLinks = [
+    { to: '/cost-optimizer', label: 'Cost Optimizer', icon: Calculator },
     { to: '/cost-monitoring', label: 'Cost Monitoring', icon: TrendingUp },
     { to: '/database-overview', label: 'Architecture', icon: Database },
     { to: '/settings', label: 'Settings', icon: SettingsIcon },
@@ -105,6 +105,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '0 1.5rem',
+          gap: '1.25rem',
           position: 'sticky',
           top: 0,
           zIndex: 90,
@@ -113,7 +114,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
         }}
       >
         {/* Left Section: Brand Logo & Desktop Navigation */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.75rem', minWidth: 0 }}>
           {/* Brand Logo */}
           <Link
             to="/dashboard"
@@ -130,31 +131,31 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
                 width: 40,
                 height: 40,
                 borderRadius: 'var(--radius-md)',
-                background: 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)',
+                background: 'var(--gradient-gold)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#ffffff',
-                boxShadow: '0 0 16px rgba(37, 99, 235, 0.45)',
-                border: '1px solid rgba(255, 255, 255, 0.15)'
+                color: 'var(--navy-900)',
+                boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 6px 18px -6px rgba(201, 162, 58, 0.6)'
               }}
             >
-              <ShieldCheck size={24} />
+              <ShieldCheck size={22} strokeWidth={2.2} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <span
                 style={{
                   color: '#ffffff',
-                  fontWeight: 800,
-                  fontSize: '1.25rem',
-                  letterSpacing: '-0.025em',
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 600,
+                  fontSize: '1.3rem',
+                  letterSpacing: '-0.01em',
                   lineHeight: 1.1
                 }}
               >
-                Inspect<span style={{ color: '#60a5fa' }}>DB</span>
+                Inspect<span style={{ color: 'var(--gold-400)' }}>DB</span>
               </span>
-              <span style={{ color: '#94a3b8', fontSize: '0.68rem', fontWeight: 500, letterSpacing: '0.02em' }}>
-                Amazon DocDB Platform
+              <span style={{ color: '#8e97ac', fontSize: '0.62rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+                Amazon DocumentDB
               </span>
             </div>
           </Link>
@@ -165,7 +166,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '0.35rem'
+              gap: '0.15rem'
             }}
           >
             {navLinks.map((item) => {
@@ -179,20 +180,22 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.5rem',
-                    padding: '0.45rem 0.85rem',
+                    padding: '0.45rem 0.75rem',
                     borderRadius: 'var(--radius-md)',
                     fontSize: '0.85rem',
                     fontWeight: 600,
                     textDecoration: 'none',
-                    color: isActive ? '#60a5fa' : '#94a3b8',
-                    backgroundColor: isActive ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
-                    border: isActive ? '1px solid rgba(96, 165, 250, 0.3)' : '1px solid transparent',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
+                    color: isActive ? 'var(--color-topbar-text-active)' : 'var(--color-topbar-text)',
+                    backgroundColor: isActive ? 'var(--color-topbar-active)' : 'transparent',
+                    border: isActive ? '1px solid var(--color-topbar-active-border)' : '1px solid transparent',
                     transition: 'all var(--transition-fast)',
                     position: 'relative'
                   }}
                   className="top-nav-item"
                 >
-                  <Icon size={16} color={isActive ? '#60a5fa' : '#94a3b8'} />
+                  <Icon size={16} color={isActive ? '#e6cf8f' : '#a9b4cc'} />
                   <span>{item.label}</span>
                   {item.badge && (
                     <span
@@ -200,9 +203,9 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
                         fontSize: '0.65rem',
                         padding: '0.1rem 0.4rem',
                         borderRadius: 'var(--radius-full)',
-                        background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(168, 85, 247, 0.25))',
-                        color: '#c084fc',
-                        border: '1px solid rgba(192, 132, 252, 0.3)',
+                        background: 'rgba(201, 162, 58, 0.16)',
+                        color: 'var(--gold-300)',
+                        border: '1px solid rgba(201, 162, 58, 0.35)',
                         fontWeight: 700,
                         letterSpacing: '0.02em'
                       }}
@@ -223,13 +226,14 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.4rem',
-                  padding: '0.45rem 0.85rem',
+                  padding: '0.45rem 0.75rem',
                   borderRadius: 'var(--radius-md)',
                   fontSize: '0.85rem',
                   fontWeight: 600,
-                  color: secondaryNavLinks.some(link => location.pathname === link.to) ? '#60a5fa' : '#94a3b8',
-                  backgroundColor: secondaryNavLinks.some(link => location.pathname === link.to) ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
-                  border: secondaryNavLinks.some(link => location.pathname === link.to) ? '1px solid rgba(96, 165, 250, 0.3)' : '1px solid transparent',
+                  whiteSpace: 'nowrap',
+                  color: secondaryNavLinks.some(link => location.pathname === link.to) ? 'var(--color-topbar-text-active)' : 'var(--color-topbar-text)',
+                  backgroundColor: secondaryNavLinks.some(link => location.pathname === link.to) ? 'var(--color-topbar-active)' : 'transparent',
+                  border: secondaryNavLinks.some(link => location.pathname === link.to) ? '1px solid var(--color-topbar-active-border)' : '1px solid transparent',
                   cursor: 'pointer'
                 }}
                 className="top-nav-item"
@@ -246,8 +250,8 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
                     top: 'calc(100% + 8px)',
                     left: 0,
                     width: 220,
-                    backgroundColor: '#111827',
-                    border: '1px solid #1f2937',
+                    backgroundColor: '#0e1e42',
+                    border: '1px solid #1c2b4f',
                     borderRadius: 'var(--radius-lg)',
                     boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
                     padding: '0.5rem',
@@ -274,12 +278,12 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
                           fontSize: '0.825rem',
                           fontWeight: 600,
                           textDecoration: 'none',
-                          color: isActive ? '#60a5fa' : '#e2e8f0',
-                          backgroundColor: isActive ? 'rgba(59, 130, 246, 0.15)' : 'transparent'
+                          color: isActive ? 'var(--gold-300)' : '#dfe3ec',
+                          backgroundColor: isActive ? 'var(--color-topbar-active)' : 'transparent'
                         }}
                         className="dropdown-nav-item"
                       >
-                        <Icon size={16} color={isActive ? '#60a5fa' : '#94a3b8'} />
+                        <Icon size={16} color={isActive ? '#e6cf8f' : '#8e97ac'} />
                         <span>{item.label}</span>
                       </NavLink>
                     );
@@ -291,7 +295,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
         </div>
 
         {/* Right Section: Actions, Search, Live DB Badge, Notifications & Profile */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', flexShrink: 0 }}>
           {/* Quick "New Inspection" Button */}
           <Link
             to="/create-inspection"
@@ -301,13 +305,14 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
               gap: '0.45rem',
               padding: '0.45rem 0.95rem',
               borderRadius: 'var(--radius-md)',
-              background: 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)',
-              color: '#ffffff',
+              background: 'var(--gradient-gold)',
+              color: 'var(--navy-950)',
               fontSize: '0.825rem',
               fontWeight: 700,
               textDecoration: 'none',
-              boxShadow: '0 2px 10px rgba(37, 99, 235, 0.35)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
+              whiteSpace: 'nowrap',
+              boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 6px 16px -6px rgba(201, 162, 58, 0.55)',
+              border: '1px solid var(--gold-600)',
               transition: 'transform var(--transition-fast), box-shadow var(--transition-fast)'
             }}
             className="topbar-create-btn"
@@ -318,7 +323,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
 
           {/* Search Bar */}
           <form onSubmit={handleSearchSubmit} style={{ position: 'relative', width: '220px' }} className="topbar-search">
-            <Search size={14} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
+            <Search size={14} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#67718a' }} />
             <input
               type="text"
               placeholder="Search reports..."
@@ -333,7 +338,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
                 borderRadius: 'var(--radius-full)',
                 backgroundColor: 'rgba(255, 255, 255, 0.06)',
                 border: '1px solid rgba(255, 255, 255, 0.12)',
-                color: '#f8fafc',
+                color: '#f5f7fa',
                 outline: 'none',
                 transition: 'border-color 0.15s, background-color 0.15s'
               }}
@@ -350,11 +355,12 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
               gap: '0.45rem',
               padding: '0.35rem 0.75rem',
               borderRadius: 'var(--radius-full)',
-              backgroundColor: backendOnline ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-              border: `1px solid ${backendOnline ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+              backgroundColor: 'rgba(255, 255, 255, 0.04)',
+              border: `1px solid ${backendOnline ? 'rgba(201, 162, 58, 0.3)' : 'rgba(194, 59, 59, 0.35)'}`,
               fontSize: '0.75rem',
               fontWeight: 600,
-              color: backendOnline ? '#34d399' : '#f87171',
+              whiteSpace: 'nowrap',
+              color: backendOnline ? 'var(--gold-300)' : '#e07a7a',
               textDecoration: 'none'
             }}
             title="Amazon DocumentDB & Neon Auth Status"
@@ -365,8 +371,8 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
                 width: 7,
                 height: 7,
                 borderRadius: '50%',
-                backgroundColor: backendOnline ? '#10b981' : '#ef4444',
-                boxShadow: backendOnline ? '0 0 8px #10b981' : 'none'
+                backgroundColor: backendOnline ? '#22a06b' : '#d04545',
+                boxShadow: backendOnline ? '0 0 8px #22a06b' : 'none'
               }}
             />
             <span>{backendOnline ? 'DocDB + Neon' : 'Offline'}</span>
@@ -386,7 +392,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
                 borderRadius: '50%',
                 backgroundColor: 'rgba(255, 255, 255, 0.06)',
                 border: '1px solid rgba(255, 255, 255, 0.12)',
-                color: '#94a3b8',
+                color: '#8e97ac',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -403,9 +409,9 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
                   right: 7,
                   width: 7,
                   height: 7,
-                  backgroundColor: '#3b82f6',
+                  backgroundColor: '#3a6fe0',
                   borderRadius: '50%',
-                  boxShadow: '0 0 6px #3b82f6'
+                  boxShadow: '0 0 6px #3a6fe0'
                 }}
               />
             </button>
@@ -417,8 +423,8 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
                   right: 0,
                   top: 'calc(100% + 8px)',
                   width: 320,
-                  backgroundColor: '#111827',
-                  border: '1px solid #1f2937',
+                  backgroundColor: '#0e1e42',
+                  border: '1px solid #1c2b4f',
                   borderRadius: 'var(--radius-lg)',
                   boxShadow: '0 15px 30px -5px rgba(0, 0, 0, 0.6)',
                   padding: '0.75rem',
@@ -428,14 +434,14 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
                 <div
                   style={{
                     padding: '0.4rem 0.4rem 0.6rem',
-                    borderBottom: '1px solid #1f2937',
+                    borderBottom: '1px solid #1c2b4f',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center'
                   }}
                 >
-                  <span style={{ fontWeight: 700, fontSize: '0.85rem', color: '#f8fafc' }}>System Notifications</span>
-                  <span style={{ fontSize: '0.7rem', color: '#60a5fa', fontWeight: 600 }}>Active Session</span>
+                  <span style={{ fontWeight: 700, fontSize: '0.85rem', color: '#f5f7fa' }}>System Notifications</span>
+                  <span style={{ fontSize: '0.7rem', color: '#e6cf8f', fontWeight: 600 }}>Active Session</span>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', marginTop: '0.5rem' }}>
                   <div
@@ -448,10 +454,10 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
                       gap: '0.6rem'
                     }}
                   >
-                    <CheckCircle2 size={16} color="#10b981" style={{ flexShrink: 0, marginTop: 2 }} />
+                    <CheckCircle2 size={16} color="#22a06b" style={{ flexShrink: 0, marginTop: 2 }} />
                     <div>
-                      <div style={{ fontWeight: 600, color: '#f8fafc' }}>Neon PostgreSQL Authenticated</div>
-                      <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>User isolation active on user ID {currentUser?.id?.slice(0, 8)}...</div>
+                      <div style={{ fontWeight: 600, color: '#f5f7fa' }}>Neon PostgreSQL Authenticated</div>
+                      <div style={{ fontSize: '0.72rem', color: '#8e97ac' }}>User isolation active on user ID {currentUser?.id?.slice(0, 8)}...</div>
                     </div>
                   </div>
                   <div
@@ -464,10 +470,10 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
                       gap: '0.6rem'
                     }}
                   >
-                    <ShieldCheck size={16} color="#3b82f6" style={{ flexShrink: 0, marginTop: 2 }} />
+                    <ShieldCheck size={16} color="#3a6fe0" style={{ flexShrink: 0, marginTop: 2 }} />
                     <div>
-                      <div style={{ fontWeight: 600, color: '#f8fafc' }}>DocumentDB Compatibility Ready</div>
-                      <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Real-time syntax validation active for Amazon DocumentDB 5.0.</div>
+                      <div style={{ fontWeight: 600, color: '#f5f7fa' }}>DocumentDB Compatibility Ready</div>
+                      <div style={{ fontSize: '0.72rem', color: '#8e97ac' }}>Real-time syntax validation active for Amazon DocumentDB 5.0.</div>
                     </div>
                   </div>
                 </div>
@@ -499,14 +505,14 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
                   width: 30,
                   height: 30,
                   borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+                  background: 'var(--gradient-gold)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#ffffff',
+                  color: 'var(--navy-900)',
                   fontSize: '0.78rem',
                   fontWeight: 700,
-                  boxShadow: '0 0 8px rgba(99, 102, 241, 0.4)'
+                  boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.4)'
                 }}
               >
                 {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : <User size={15} />}
@@ -515,13 +521,14 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
                 style={{
                   fontSize: '0.825rem',
                   fontWeight: 600,
-                  color: '#f8fafc'
+                  color: '#f5f7fa',
+                  whiteSpace: 'nowrap'
                 }}
                 className="user-name"
               >
                 {currentUser?.name || 'Inspector'}
               </span>
-              <ChevronDown size={13} color="#94a3b8" />
+              <ChevronDown size={13} color="#8e97ac" />
             </button>
 
             {showProfile && (
@@ -531,8 +538,8 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
                   right: 0,
                   top: 'calc(100% + 8px)',
                   width: 250,
-                  backgroundColor: '#111827',
-                  border: '1px solid #1f2937',
+                  backgroundColor: '#0e1e42',
+                  border: '1px solid #1c2b4f',
                   borderRadius: 'var(--radius-lg)',
                   boxShadow: '0 15px 30px -5px rgba(0, 0, 0, 0.6)',
                   padding: '0.5rem',
@@ -542,17 +549,17 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
                 <div
                   style={{
                     padding: '0.65rem',
-                    borderBottom: '1px solid #1f2937',
+                    borderBottom: '1px solid #1c2b4f',
                     marginBottom: '0.35rem'
                   }}
                 >
-                  <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#f8fafc' }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#f5f7fa' }}>
                     {currentUser?.name || 'Inspector Account'}
                   </div>
                   <div
                     style={{
                       fontSize: '0.75rem',
-                      color: '#94a3b8',
+                      color: '#8e97ac',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap'
@@ -566,10 +573,10 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
                         fontSize: '0.65rem',
                         padding: '0.1rem 0.45rem',
                         borderRadius: '4px',
-                        backgroundColor: 'rgba(99, 102, 241, 0.2)',
-                        color: '#a5b4fc',
+                        backgroundColor: 'rgba(201, 162, 58, 0.2)',
+                        color: '#a3bdf3',
                         fontWeight: 600,
-                        border: '1px solid rgba(99, 102, 241, 0.3)'
+                        border: '1px solid rgba(201, 162, 58, 0.3)'
                       }}
                     >
                       {currentUser?.role || 'USER'}
@@ -579,10 +586,10 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
                         fontSize: '0.65rem',
                         padding: '0.1rem 0.45rem',
                         borderRadius: '4px',
-                        backgroundColor: 'rgba(16, 185, 129, 0.2)',
-                        color: '#6ee7b7',
+                        backgroundColor: 'rgba(34, 160, 107, 0.2)',
+                        color: '#8fd7b5',
                         fontWeight: 600,
-                        border: '1px solid rgba(16, 185, 129, 0.3)'
+                        border: '1px solid rgba(34, 160, 107, 0.3)'
                       }}
                     >
                       Neon Auth
@@ -600,12 +607,12 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
                     padding: '0.5rem 0.65rem',
                     fontSize: '0.825rem',
                     borderRadius: 'var(--radius-md)',
-                    color: '#e2e8f0',
+                    color: '#dfe3ec',
                     textDecoration: 'none'
                   }}
                   className="dropdown-nav-item"
                 >
-                  <Sparkles size={15} color="#60a5fa" />
+                  <Sparkles size={15} color="#e6cf8f" />
                   <span>AI Query Assistant</span>
                 </Link>
 
@@ -619,16 +626,16 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
                     padding: '0.5rem 0.65rem',
                     fontSize: '0.825rem',
                     borderRadius: 'var(--radius-md)',
-                    color: '#e2e8f0',
+                    color: '#dfe3ec',
                     textDecoration: 'none'
                   }}
                   className="dropdown-nav-item"
                 >
-                  <SettingsIcon size={15} color="#94a3b8" />
+                  <SettingsIcon size={15} color="#8e97ac" />
                   <span>Project Settings</span>
                 </Link>
 
-                <div style={{ borderTop: '1px solid #1f2937', marginTop: '0.35rem', paddingTop: '0.35rem' }}>
+                <div style={{ borderTop: '1px solid #1c2b4f', marginTop: '0.35rem', paddingTop: '0.35rem' }}>
                   <button
                     type="button"
                     onClick={handleLogout}
@@ -640,7 +647,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
                       padding: '0.5rem 0.65rem',
                       fontSize: '0.825rem',
                       borderRadius: 'var(--radius-md)',
-                      color: '#f87171',
+                      color: '#e07a7a',
                       backgroundColor: 'transparent',
                       border: 'none',
                       cursor: 'pointer',
@@ -666,7 +673,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
               borderRadius: 'var(--radius-md)',
               backgroundColor: 'rgba(255, 255, 255, 0.06)',
               border: '1px solid rgba(255, 255, 255, 0.12)',
-              color: '#f8fafc',
+              color: '#f5f7fa',
               cursor: 'pointer',
               display: 'none',
               alignItems: 'center',
@@ -686,7 +693,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
             position: 'fixed',
             inset: 0,
             top: 'var(--topbar-height)',
-            backgroundColor: 'rgba(11, 17, 32, 0.95)',
+            backgroundColor: 'rgba(6, 14, 34, 0.95)',
             backdropFilter: 'blur(20px)',
             zIndex: 89,
             padding: '1.25rem',
@@ -699,7 +706,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
         >
           {/* Mobile Search */}
           <form onSubmit={handleSearchSubmit} style={{ position: 'relative' }}>
-            <Search size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
+            <Search size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: '#67718a' }} />
             <input
               type="text"
               placeholder="Search reports, inspectors..."
@@ -712,9 +719,9 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
                 height: '42px',
                 fontSize: '0.9rem',
                 borderRadius: 'var(--radius-md)',
-                backgroundColor: '#1e293b',
-                border: '1px solid #334155',
-                color: '#f8fafc',
+                backgroundColor: '#1f2a44',
+                border: '1px solid #36415a',
+                color: '#f5f7fa',
                 outline: 'none'
               }}
             />
@@ -731,7 +738,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
               gap: '0.5rem',
               padding: '0.75rem',
               borderRadius: 'var(--radius-md)',
-              background: 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)',
+              background: 'linear-gradient(135deg, #2459c9 0%, #1a3466 100%)',
               color: '#ffffff',
               fontWeight: 700,
               textDecoration: 'none'
@@ -743,7 +750,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
 
           {/* Nav items */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', paddingLeft: '0.5rem' }}>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#67718a', textTransform: 'uppercase', paddingLeft: '0.5rem' }}>
               Main Navigation
             </span>
             {[...navLinks, ...secondaryNavLinks].map((item) => {
@@ -763,12 +770,12 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
                     fontSize: '0.95rem',
                     fontWeight: 600,
                     textDecoration: 'none',
-                    color: isActive ? '#60a5fa' : '#e2e8f0',
-                    backgroundColor: isActive ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
-                    border: isActive ? '1px solid rgba(96, 165, 250, 0.3)' : '1px solid transparent'
+                    color: isActive ? '#e6cf8f' : '#dfe3ec',
+                    backgroundColor: isActive ? 'rgba(201, 162, 58, 0.15)' : 'transparent',
+                    border: isActive ? '1px solid rgba(107, 147, 234, 0.3)' : '1px solid transparent'
                   }}
                 >
-                  <Icon size={18} color={isActive ? '#60a5fa' : '#94a3b8'} />
+                  <Icon size={18} color={isActive ? '#e6cf8f' : '#8e97ac'} />
                   <span>{item.label}</span>
                 </NavLink>
               );
@@ -776,7 +783,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
           </div>
 
           {/* Logout */}
-          <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid #1e293b' }}>
+          <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid #1f2a44' }}>
             <button
               onClick={handleLogout}
               style={{
@@ -787,9 +794,9 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
                 gap: '0.5rem',
                 padding: '0.75rem',
                 borderRadius: 'var(--radius-md)',
-                backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                color: '#f87171',
-                border: '1px solid rgba(239, 68, 68, 0.25)',
+                backgroundColor: 'rgba(194, 59, 59, 0.1)',
+                color: '#e07a7a',
+                border: '1px solid rgba(194, 59, 59, 0.25)',
                 fontWeight: 600,
                 cursor: 'pointer'
               }}
@@ -804,26 +811,46 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
       {/* Embedded Component Styles */}
       <style>{`
         .top-nav-item:hover {
-          color: #f1f5f9 !important;
-          background-color: rgba(255, 255, 255, 0.08) !important;
+          color: #ffffff !important;
+          background-color: var(--color-topbar-hover) !important;
         }
         .dropdown-nav-item:hover {
           background-color: rgba(255, 255, 255, 0.08) !important;
           color: #ffffff !important;
         }
         .dropdown-logout-item:hover {
-          background-color: rgba(239, 68, 68, 0.15) !important;
+          background-color: rgba(194, 59, 59, 0.15) !important;
         }
         .topbar-create-btn:hover {
           transform: translateY(-1px);
-          box-shadow: 0 4px 14px rgba(37, 99, 235, 0.5) !important;
+          filter: brightness(1.06);
+          color: var(--navy-950) !important;
         }
         .topbar-search-input:focus {
-          border-color: #3b82f6 !important;
+          border-color: var(--gold-500) !important;
           background-color: rgba(255, 255, 255, 0.1) !important;
         }
         .topbar-icon-btn:hover, .topbar-profile-btn:hover {
           background-color: rgba(255, 255, 255, 0.12) !important;
+        }
+
+        /* Keep one tidy row at every width: shed secondary items before anything wraps */
+        @media (max-width: 1599px) {
+          .topbar-search {
+            display: none !important;
+          }
+        }
+
+        @media (max-width: 1379px) {
+          .topbar-db-badge {
+            display: none !important;
+          }
+        }
+
+        @media (max-width: 1279px) {
+          .user-name {
+            display: none !important;
+          }
         }
 
         @media (max-width: 1100px) {

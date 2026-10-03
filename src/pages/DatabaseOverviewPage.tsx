@@ -77,13 +77,13 @@ export const DatabaseOverviewPage: React.FC = () => {
             gap: '0.4rem',
             fontSize: '0.95rem',
             fontWeight: 800,
-            color: '#d97706',
+            color: '#a9801e',
             marginTop: '0.25rem'
           }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#f59e0b' }} />
+            <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#c9a23a' }} />
             Not Configured (Phase 1)
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
+          <div style={{ fontSize: '0.75rem', color: '#67718a', marginTop: '0.25rem' }}>
             Running in Local Development
           </div>
         </div>

@@ -113,11 +113,11 @@ export const SettingsPage: React.FC = () => {
           {health && (
             <div style={{
               padding: '0.85rem',
-              backgroundColor: '#f0fdf4',
-              border: '1px solid #bbf7d0',
+              backgroundColor: '#f0f8f4',
+              border: '1px solid #b9e2cf',
               borderRadius: 'var(--radius-md)',
               fontSize: '0.825rem',
-              color: '#166534'
+              color: '#13623f'
             }}>
               <strong>API Status:</strong> {health.service} — {health.database.message}
             </div>
@@ -147,7 +147,7 @@ export const SettingsPage: React.FC = () => {
             </div>
             <div style={{ padding: '0.75rem', backgroundColor: 'var(--color-bg-surface-secondary)', borderRadius: 'var(--radius-md)' }}>
               <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>AWS CLUSTER CHARGES</div>
-              <div style={{ fontWeight: 700, fontSize: '0.9rem', color: store.clusterCostActive ? '#b45309' : '#059669' }}>
+              <div style={{ fontWeight: 700, fontSize: '0.9rem', color: store.clusterCostActive ? '#8a6716' : '#1e8e62' }}>
                 {store.clusterCostActive ? 'Active (Live DocumentDB Cluster)' : '$0.00 (In-Memory Simulation)'}
               </div>
             </div>

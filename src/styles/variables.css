@@ -1,90 +1,143 @@
+/* ==========================================================================
+   InspectDB design tokens: Midnight Navy & Champagne Gold
+   Palette scales first, then the semantic tokens the components use.
+   ========================================================================== */
 :root {
-  /* High-End Enterprise Slate & Indigo Navigation Palette */
-  --color-topbar-bg: #0b1120;
-  --color-topbar-surface: #111827;
-  --color-topbar-border: #1e293b;
-  --color-topbar-hover: rgba(255, 255, 255, 0.08);
-  --color-topbar-active: rgba(59, 130, 246, 0.16);
-  --color-topbar-active-border: rgba(96, 165, 250, 0.4);
-  --color-topbar-text: #94a3b8;
-  --color-topbar-text-hover: #f1f5f9;
-  --color-topbar-text-active: #60a5fa;
+  /* Navy: brand surfaces (top bar, hero, dark panels) */
+  --navy-950: #060E22;
+  --navy-900: #0A1733;
+  --navy-850: #0E1E42;
+  --navy-800: #122650;
+  --navy-700: #1A3466;
+  --navy-600: #24447F;
 
-  /* Legacy Sidebar (kept for mobile drawer) */
-  --color-sidebar-bg: #0b1120;
-  --color-sidebar-hover: #1e293b;
-  --color-sidebar-active: #2563eb;
-  --color-sidebar-border: #1e293b;
-  --color-sidebar-text: #94a3b8;
-  --color-sidebar-text-active: #ffffff;
-  --color-sidebar-header: #f8fafc;
+  /* Blue: interactive elements (links, primary buttons, focus) */
+  --blue-800: #163F94;
+  --blue-700: #1C4DB0;
+  --blue-600: #2459C9;
+  --blue-500: #3A6FE0;
+  --blue-400: #6B93EA;
+  --blue-300: #A3BDF3;
+  --blue-200: #CDDCF9;
+  --blue-100: #E6EEFC;
+  --blue-50:  #F3F7FE;
 
-  /* App Canvas & Surfaces */
-  --color-bg-app: #f8fafc;
-  --color-bg-surface: #ffffff;
-  --color-bg-surface-secondary: #f1f5f9;
-  --color-bg-surface-tertiary: #e2e8f0;
-  
-  /* Primary Brand & Gradients */
-  --color-primary: #2563eb;
-  --color-primary-hover: #1d4ed8;
-  --color-primary-light: #eff6ff;
-  --color-primary-focus: rgba(37, 99, 235, 0.2);
-  --gradient-primary: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
-  --gradient-accent: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  /* Gold: accents, highlights, premium touches (use sparingly) */
+  --gold-900: #4F3A0B;
+  --gold-800: #6E5210;
+  --gold-700: #8A6716;   /* gold text on light surfaces (AA contrast) */
+  --gold-600: #A9801E;
+  --gold-500: #C9A23A;   /* signature champagne gold */
+  --gold-400: #D8B860;
+  --gold-300: #E6CF8F;
+  --gold-200: #F0E2B8;
+  --gold-100: #F8F0DA;
+  --gold-50:  #FCF8ED;
+
+  /* Ink: navy-tinted neutrals */
+  --ink-900: #0E1730;
+  --ink-800: #1F2A44;
+  --ink-700: #36415A;
+  --ink-600: #4E5871;
+  --ink-500: #67718A;
+  --ink-400: #8E97AC;
+  --ink-300: #C3C9D6;
+  --ink-200: #DFE3EC;
+  --ink-100: #ECEFF5;
+  --ink-50:  #F5F7FA;
+
+  /* Top navigation (navy with gold active state) */
+  --color-topbar-bg: var(--navy-900);
+  --color-topbar-surface: var(--navy-850);
+  --color-topbar-border: rgba(201, 162, 58, 0.18);
+  --color-topbar-hover: rgba(255, 255, 255, 0.07);
+  --color-topbar-active: rgba(201, 162, 58, 0.14);
+  --color-topbar-active-border: rgba(201, 162, 58, 0.38);
+  --color-topbar-text: #A9B4CC;
+  --color-topbar-text-hover: #FFFFFF;
+  --color-topbar-text-active: var(--gold-300);
+
+  /* Legacy sidebar (mobile drawer) */
+  --color-sidebar-bg: var(--navy-900);
+  --color-sidebar-hover: var(--navy-800);
+  --color-sidebar-active: var(--gold-500);
+  --color-sidebar-border: rgba(201, 162, 58, 0.18);
+  --color-sidebar-text: #A9B4CC;
+  --color-sidebar-text-active: #FFFFFF;
+  --color-sidebar-header: #F8FAFC;
+
+  /* App canvas & surfaces */
+  --color-bg-app: #F4F6FA;
+  --color-bg-surface: #FFFFFF;
+  --color-bg-surface-secondary: var(--ink-50);
+  --color-bg-surface-tertiary: var(--ink-100);
+
+  /* Primary brand & gradients */
+  --color-primary: var(--blue-600);
+  --color-primary-hover: var(--blue-700);
+  --color-primary-light: var(--blue-50);
+  --color-primary-focus: rgba(36, 89, 201, 0.18);
+  --color-accent: var(--gold-500);
+  --color-accent-text: var(--gold-700);
+  --color-accent-light: var(--gold-50);
+  --gradient-primary: linear-gradient(135deg, var(--blue-600) 0%, var(--navy-700) 100%);
+  --gradient-navy: linear-gradient(160deg, var(--navy-800) 0%, var(--navy-950) 100%);
+  --gradient-gold: linear-gradient(135deg, #E9D08A 0%, var(--gold-500) 45%, #A9801E 100%);
+  --gradient-accent: linear-gradient(135deg, var(--blue-500) 0%, var(--gold-500) 100%);
   --gradient-subtle: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 100%);
 
-  /* Semantic Status Colors */
-  --color-success: #10b981;
-  --color-success-light: #ecfdf5;
-  --color-success-border: #a7f3d0;
-  --color-success-text: #065f46;
+  /* Semantic status colors (tuned to sit beside navy & gold) */
+  --color-success: #1E8E62;
+  --color-success-light: #E9F6F0;
+  --color-success-border: #B9E2CF;
+  --color-success-text: #13623F;
 
-  --color-warning: #f59e0b;
-  --color-warning-light: #fffbeb;
-  --color-warning-border: #fde68a;
-  --color-warning-text: #92400e;
+  --color-warning: #B7841C;
+  --color-warning-light: #FBF5E4;
+  --color-warning-border: #EDDBA6;
+  --color-warning-text: #7A5A12;
 
-  --color-danger: #ef4444;
-  --color-danger-light: #fef2f2;
-  --color-danger-border: #fecaca;
-  --color-danger-text: #991b1b;
+  --color-danger: #C23B3B;
+  --color-danger-light: #FBEDED;
+  --color-danger-border: #F1C9C9;
+  --color-danger-text: #8E2525;
 
-  --color-info: #0284c7;
-  --color-info-light: #f0f9ff;
-  --color-info-border: #bae6fd;
-  --color-info-text: #0369a1;
+  --color-info: var(--blue-600);
+  --color-info-light: var(--blue-50);
+  --color-info-border: var(--blue-200);
+  --color-info-text: var(--blue-700);
 
-  /* Severity Specifics */
-  --sev-critical: #dc2626;
-  --sev-critical-bg: #fee2e2;
-  --sev-high: #ea580c;
-  --sev-high-bg: #ffedd5;
-  --sev-medium: #d97706;
-  --sev-medium-bg: #fef3c7;
-  --sev-low: #059669;
-  --sev-low-bg: #d1fae5;
-  --sev-none: #64748b;
-  --sev-none-bg: #f1f5f9;
+  /* Severity */
+  --sev-critical: #B42828;
+  --sev-critical-bg: #FBEAEA;
+  --sev-high: #B9561C;
+  --sev-high-bg: #FCEFE5;
+  --sev-medium: #9C7417;
+  --sev-medium-bg: #FBF4E2;
+  --sev-low: #1E8E62;
+  --sev-low-bg: #E7F5EE;
+  --sev-none: var(--ink-500);
+  --sev-none-bg: var(--ink-100);
 
-  /* Text & Typography */
-  --color-text-primary: #0f172a;
-  --color-text-secondary: #475569;
-  --color-text-muted: #64748b;
-  --color-text-inverse: #ffffff;
+  /* Text */
+  --color-text-primary: var(--ink-900);
+  --color-text-secondary: var(--ink-700);
+  --color-text-muted: var(--ink-500);
+  --color-text-inverse: #FFFFFF;
 
-  /* Borders & Dividers */
-  --color-border: #e2e8f0;
-  --color-border-hover: #cbd5e1;
-  --color-border-subtle: #f1f5f9;
+  /* Borders */
+  --color-border: var(--ink-200);
+  --color-border-hover: var(--ink-300);
+  --color-border-subtle: var(--ink-100);
 
-  /* Shadows */
-  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
-  --shadow-lg: 0 10px 20px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
-  --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
-  --shadow-glow: 0 0 20px rgba(59, 130, 246, 0.35);
+  /* Shadows (navy-tinted, soft and layered) */
+  --shadow-xs: 0 1px 2px rgba(10, 23, 51, 0.05);
+  --shadow-sm: 0 1px 2px rgba(10, 23, 51, 0.05), 0 2px 6px rgba(10, 23, 51, 0.04);
+  --shadow-md: 0 2px 4px rgba(10, 23, 51, 0.04), 0 8px 20px -6px rgba(10, 23, 51, 0.10);
+  --shadow-lg: 0 4px 8px rgba(10, 23, 51, 0.04), 0 18px 36px -12px rgba(10, 23, 51, 0.16);
+  --shadow-xl: 0 8px 16px rgba(10, 23, 51, 0.06), 0 28px 56px -16px rgba(10, 23, 51, 0.24);
+  --shadow-glow: 0 0 0 1px rgba(201, 162, 58, 0.35), 0 8px 24px -6px rgba(201, 162, 58, 0.35);
+  --shadow-gold: 0 6px 20px -6px rgba(169, 128, 30, 0.45);
 
   /* Radii */
   --radius-sm: 6px;
@@ -94,29 +147,35 @@
   --radius-full: 9999px;
 
   /* Typography */
-  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', Consolas, Monaco, "Courier New", monospace;
+  --font-display: 'Fraunces', 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', Consolas, Monaco, 'Courier New', monospace;
 
-  /* Layout dimensions */
-  --topbar-height: 68px;
+  /* Layout */
+  --topbar-height: 64px;
   --subbar-height: 44px;
   --sidebar-width: 260px;
   --sidebar-collapsed-width: 72px;
+  --content-max-width: 1400px;
 
-  /* Transitions */
+  /* Motion */
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 [data-theme="dark"] {
-  --color-bg-app: #090d16;
-  --color-bg-surface: #111827;
-  --color-bg-surface-secondary: #1f2937;
-  --color-bg-surface-tertiary: #374151;
-  --color-text-primary: #f9fafb;
-  --color-text-secondary: #9ca3af;
-  --color-text-muted: #6b7280;
-  --color-border: #1f2937;
-  --color-border-hover: #374151;
-  --color-border-subtle: #182234;
+  --color-bg-app: var(--navy-950);
+  --color-bg-surface: var(--navy-900);
+  --color-bg-surface-secondary: var(--navy-850);
+  --color-bg-surface-tertiary: var(--navy-800);
+  --color-text-primary: #EEF1F7;
+  --color-text-secondary: #B4BDD0;
+  --color-text-muted: #8590A8;
+  --color-border: #1C2B4F;
+  --color-border-hover: #2A3D68;
+  --color-border-subtle: #142246;
+  --color-primary: var(--blue-400);
+  --color-primary-hover: var(--blue-300);
+  --color-primary-light: rgba(107, 147, 234, 0.12);
+  --color-accent-text: var(--gold-400);
 }

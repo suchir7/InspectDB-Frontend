@@ -104,9 +104,9 @@ export const LoginPage: React.FC = () => {
         {/* Error Alert */}
         {error && (
           <div className="auth-error-box">
-            <AlertCircle size={16} style={{ flexShrink: 0, marginTop: 2, color: '#fb7185' }} />
+            <AlertCircle size={16} style={{ flexShrink: 0, marginTop: 2, color: '#e07a7a' }} />
             <div>
-              <div style={{ fontWeight: 600, color: '#ffe4e6' }}>Authentication Failed</div>
+              <div style={{ fontWeight: 600, color: '#fbeaea' }}>Authentication Failed</div>
               <div style={{ fontSize: '0.75rem', marginTop: 2 }}>{error}</div>
             </div>
           </div>
@@ -142,7 +142,7 @@ export const LoginPage: React.FC = () => {
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: '#818cf8',
+                  color: 'var(--gold-400)',
                   fontSize: '0.75rem',
                   fontWeight: 600,
                   cursor: 'pointer'
@@ -205,8 +205,8 @@ export const LoginPage: React.FC = () => {
       </div>
 
       {/* Architecture Separation Note */}
-      <div style={{ marginTop: '1.25rem', textAlign: 'center', fontSize: '0.75rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.35rem', zIndex: 10 }}>
-        <Sparkles size={13} color="#818cf8" />
+      <div style={{ marginTop: '1.25rem', textAlign: 'center', fontSize: '0.75rem', color: '#67718a', display: 'flex', alignItems: 'center', gap: '0.35rem', zIndex: 10 }}>
+        <Sparkles size={13} color="#6b93ea" />
         <span>PostgreSQL stores relational auth & accounts. Inspection reports stay variable-schema.</span>
       </div>
 
@@ -216,7 +216,7 @@ export const LoginPage: React.FC = () => {
           <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Info size={18} color="#4f46e5" />
+                <Info size={18} color="#1a3466" />
                 <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>Password Reset Notice</h3>
               </div>
             </div>

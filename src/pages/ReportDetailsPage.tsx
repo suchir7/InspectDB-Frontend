@@ -297,8 +297,8 @@ export const ReportDetailsPage: React.FC = () => {
                                   borderRadius: 'var(--radius-sm)',
                                   fontSize: '0.72rem',
                                   fontWeight: 600,
-                                  backgroundColor: issue.status === 'resolved' ? '#d1fae5' : issue.status === 'in_progress' ? '#fef3c7' : '#fee2e2',
-                                  color: issue.status === 'resolved' ? '#065f46' : issue.status === 'in_progress' ? '#92400e' : '#991b1b'
+                                  backgroundColor: issue.status === 'resolved' ? '#e7f5ee' : issue.status === 'in_progress' ? '#fbf4e2' : '#fbeaea',
+                                  color: issue.status === 'resolved' ? '#13623f' : issue.status === 'in_progress' ? '#7a5a12' : '#8e2525'
                                 }}>
                                   {issue.status.replace('_', ' ').toUpperCase()}
                                 </span>
@@ -386,8 +386,8 @@ export const ReportDetailsPage: React.FC = () => {
             <pre style={{
               margin: 0,
               padding: '0.85rem',
-              backgroundColor: '#0f172a',
-              color: '#38bdf8',
+              backgroundColor: '#0a1733',
+              color: '#6b93ea',
               borderRadius: 'var(--radius-md)',
               maxHeight: '220px',
               overflowY: 'auto',

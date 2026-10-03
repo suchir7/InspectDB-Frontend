@@ -79,7 +79,9 @@ export const AiQueryAssistantPage: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Scroll only the chat panel; scrollIntoView would also scroll the whole page on load
+    const chatPanel = messagesEndRef.current?.parentElement;
+    chatPanel?.scrollTo({ top: chatPanel.scrollHeight, behavior: 'smooth' });
   };
 
   useEffect(() => {
@@ -279,12 +281,12 @@ export const AiQueryAssistantPage: React.FC = () => {
                 </span>
                 {aiStatus?.local_mongodb_available ? (
                   <span className="badge badge-success" style={{ fontSize: '0.7rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
-                    <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#10b981' }} />
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#22a06b' }} />
                     {engineName} Online
                   </span>
                 ) : (
                   <span className="badge badge-warning" style={{ fontSize: '0.7rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
-                    <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#f59e0b' }} />
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#c9a23a' }} />
                     {engineName} Offline (Simulation)
                   </span>
                 )}
@@ -344,17 +346,17 @@ export const AiQueryAssistantPage: React.FC = () => {
         {aiStatus && !aiStatus.gemini_configured && (
           <div style={{
             padding: '0.65rem 1.25rem',
-            backgroundColor: '#fffbeb',
-            borderBottom: '1px solid #fde68a',
+            backgroundColor: '#fbf5e4',
+            borderBottom: '1px solid #eddba6',
             fontSize: '0.8rem',
-            color: '#92400e',
+            color: '#7a5a12',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             gap: '1rem'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Key size={15} color="#d97706" style={{ flexShrink: 0 }} />
+              <Key size={15} color="#a9801e" style={{ flexShrink: 0 }} />
               <span>
                 <strong>Deterministic Fallback Mode:</strong> Running with deterministic schema-guided pattern templates. Set <code>GEMINI_API_KEY</code> in <code>backend/.env</code> for generative AI.
               </span>
@@ -401,7 +403,7 @@ export const AiQueryAssistantPage: React.FC = () => {
                     width: 32,
                     height: 32,
                     borderRadius: 'var(--radius-full)',
-                    backgroundColor: msg.sender === 'user' ? 'var(--color-primary)' : '#0f172a',
+                    backgroundColor: msg.sender === 'user' ? 'var(--color-primary)' : '#0a1733',
                     color: '#ffffff',
                     display: 'flex',
                     alignItems: 'center',
@@ -463,24 +465,24 @@ export const AiQueryAssistantPage: React.FC = () => {
                       <div style={{
                         borderRadius: 'var(--radius-md)',
                         overflow: 'hidden',
-                        border: '1px solid #1e293b',
-                        backgroundColor: '#0f172a',
-                        color: '#f8fafc'
+                        border: '1px solid #1f2a44',
+                        backgroundColor: '#0a1733',
+                        color: '#f5f7fa'
                       }}>
                         <div style={{
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
                           padding: '0.5rem 0.85rem',
-                          backgroundColor: '#1e293b',
-                          borderBottom: '1px solid #334155'
+                          backgroundColor: '#1f2a44',
+                          borderBottom: '1px solid #36415a'
                         }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: '#93c5fd' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: '#a3bdf3' }}>
                             <Code size={14} />
                             <span style={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                               Generated MongoDB Query
                             </span>
-                            <code style={{ fontSize: '0.7rem', backgroundColor: '#0f172a', color: '#38bdf8', padding: '0.15rem 0.4rem', borderRadius: 4 }}>
+                            <code style={{ fontSize: '0.7rem', backgroundColor: '#0a1733', color: '#6b93ea', padding: '0.15rem 0.4rem', borderRadius: 4 }}>
                               {resp.collection}.{resp.operation || 'find'}(...)
                             </code>
                           </div>
@@ -488,12 +490,12 @@ export const AiQueryAssistantPage: React.FC = () => {
                           <button
                             onClick={() => handleCopyQuery(resp.query, `orig-${msg.id}`)}
                             className="btn btn-ghost btn-sm"
-                            style={{ color: '#94a3b8', fontSize: '0.72rem', padding: '0.2rem 0.45rem' }}
+                            style={{ color: '#8e97ac', fontSize: '0.72rem', padding: '0.2rem 0.45rem' }}
                           >
                             {copiedId === `orig-${msg.id}` ? (
                               <>
-                                <Check size={13} color="#10b981" />
-                                <span style={{ color: '#34d399' }}>Copied!</span>
+                                <Check size={13} color="#22a06b" />
+                                <span style={{ color: '#4cc08c' }}>Copied!</span>
                               </>
                             ) : (
                               <>
@@ -508,7 +510,7 @@ export const AiQueryAssistantPage: React.FC = () => {
                           margin: 0,
                           padding: '0.85rem',
                           fontSize: '0.8rem',
-                          color: isIncompat ? '#fca5a5' : '#34d399',
+                          color: isIncompat ? '#edaaaa' : '#4cc08c',
                           lineHeight: '1.5',
                           overflowX: 'auto'
                         }}>
@@ -517,8 +519,8 @@ export const AiQueryAssistantPage: React.FC = () => {
 
                         <div style={{
                           padding: '0.4rem 0.85rem',
-                          backgroundColor: '#0b1120',
-                          borderTop: '1px solid #1e293b',
+                          backgroundColor: '#0a1733',
+                          borderTop: '1px solid #1f2a44',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
@@ -528,7 +530,7 @@ export const AiQueryAssistantPage: React.FC = () => {
                             display: 'flex',
                             alignItems: 'center',
                             gap: '0.35rem',
-                            color: resp.is_validated ? '#34d399' : '#f87171'
+                            color: resp.is_validated ? '#4cc08c' : '#e07a7a'
                           }}>
                             {resp.is_validated ? <ShieldCheck size={13} /> : <AlertTriangle size={13} />}
                             <span>
@@ -537,7 +539,7 @@ export const AiQueryAssistantPage: React.FC = () => {
                                 : `Validation Notice: Incompatible or Unverified for DocumentDB ${targetVersion}`}
                             </span>
                           </div>
-                          <span style={{ color: '#94a3b8' }}>
+                          <span style={{ color: '#8e97ac' }}>
                             Operation: <strong>{resp.operation || 'find'}</strong>
                           </span>
                         </div>
@@ -553,21 +555,21 @@ export const AiQueryAssistantPage: React.FC = () => {
                         overflow: 'hidden',
                         border: `1px solid ${
                           mongo?.status === 'success'
-                            ? '#86efac'
+                            ? '#8fd7b5'
                             : mongo?.status === 'rejected'
-                            ? '#fca5a5'
-                            : '#fed7aa'
+                            ? '#edaaaa'
+                            : '#f4d3bd'
                         }`,
-                        backgroundColor: mongo?.status === 'success' ? '#f0fdf4' : mongo?.status === 'rejected' ? '#fef2f2' : '#fffbeb',
+                        backgroundColor: mongo?.status === 'success' ? '#f0f8f4' : mongo?.status === 'rejected' ? '#fbeded' : '#fbf5e4',
                         padding: '0.75rem 1rem',
                         fontSize: '0.8rem',
                         color: 'var(--color-text-primary)'
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                            <Database size={16} color={mongo?.status === 'success' ? '#16a34a' : mongo?.status === 'rejected' ? '#dc2626' : '#d97706'} />
+                            <Database size={16} color={mongo?.status === 'success' ? '#1e8e62' : mongo?.status === 'rejected' ? '#c23b3b' : '#a9801e'} />
                             <strong style={{
-                              color: mongo?.status === 'success' ? '#15803d' : mongo?.status === 'rejected' ? '#991b1b' : '#92400e',
+                              color: mongo?.status === 'success' ? '#176b4a' : mongo?.status === 'rejected' ? '#8e2525' : '#7a5a12',
                               textTransform: 'uppercase',
                               letterSpacing: '0.04em',
                               fontSize: '0.8rem'
@@ -610,7 +612,7 @@ export const AiQueryAssistantPage: React.FC = () => {
                               padding: '0.5rem 0.75rem',
                               backgroundColor: '#ffffff',
                               borderRadius: 'var(--radius-sm)',
-                              border: '1px solid #dcfce7',
+                              border: '1px solid #e7f5ee',
                               fontSize: '0.75rem'
                             }}>
                               <div>
@@ -623,11 +625,11 @@ export const AiQueryAssistantPage: React.FC = () => {
                               </div>
                               <div>
                                 <span style={{ color: 'var(--color-text-muted)', display: 'block' }}>Documents matched:</span>
-                                <strong style={{ color: '#15803d' }}>{mongo.documents_matched}</strong>
+                                <strong style={{ color: '#176b4a' }}>{mongo.documents_matched}</strong>
                               </div>
                               <div>
                                 <span style={{ color: 'var(--color-text-muted)', display: 'block' }}>Execution time:</span>
-                                <strong style={{ color: '#0284c7' }}>{mongo.execution_time_ms} ms</strong>
+                                <strong style={{ color: '#2459c9' }}>{mongo.execution_time_ms} ms</strong>
                               </div>
                             </div>
 
@@ -640,7 +642,7 @@ export const AiQueryAssistantPage: React.FC = () => {
                                   style={{
                                     fontSize: '0.75rem',
                                     padding: '0.2rem 0.4rem',
-                                    color: '#065f46',
+                                    color: '#13623f',
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '0.25rem'
@@ -654,8 +656,8 @@ export const AiQueryAssistantPage: React.FC = () => {
                                   <pre style={{
                                     marginTop: '0.35rem',
                                     padding: '0.65rem',
-                                    backgroundColor: '#0f172a',
-                                    color: '#e2e8f0',
+                                    backgroundColor: '#0a1733',
+                                    color: '#dfe3ec',
                                     borderRadius: 'var(--radius-sm)',
                                     fontSize: '0.75rem',
                                     maxHeight: '220px',
@@ -672,11 +674,11 @@ export const AiQueryAssistantPage: React.FC = () => {
 
                         {/* Unavailable Notice */}
                         {mongo?.status === 'unavailable' && (
-                          <div style={{ fontSize: '0.78rem', color: '#78350f' }}>
+                          <div style={{ fontSize: '0.78rem', color: '#6e5210' }}>
                             <p style={{ margin: '0 0 0.35rem 0' }}>
                               <strong>Reason:</strong> {mongo.reason || 'Could not connect to the document database.'}
                             </p>
-                            <p style={{ margin: 0, color: '#92400e', fontSize: '0.74rem' }}>
+                            <p style={{ margin: 0, color: '#7a5a12', fontSize: '0.74rem' }}>
                               InspectDB is running smoothly. Local test will automatically become available once <code>mongod</code> is started locally. DocumentDB compatibility analysis remains active below.
                             </p>
                           </div>
@@ -684,7 +686,7 @@ export const AiQueryAssistantPage: React.FC = () => {
 
                         {/* Rejected Notice */}
                         {mongo?.status === 'rejected' && (
-                          <div style={{ fontSize: '0.78rem', color: '#991b1b' }}>
+                          <div style={{ fontSize: '0.78rem', color: '#8e2525' }}>
                             <strong>Safety Rejection:</strong> {mongo.reason || 'Only read-only find/aggregate queries are allowed.'}
                           </div>
                         )}
@@ -697,8 +699,8 @@ export const AiQueryAssistantPage: React.FC = () => {
                     {!msg.loading && resp && compat && (
                       <div style={{
                         borderRadius: 'var(--radius-md)',
-                        backgroundColor: isIncompat ? 'rgba(239, 68, 68, 0.08)' : isBehaviorDiff ? 'rgba(2, 132, 199, 0.08)' : isPartial ? 'rgba(245, 158, 11, 0.08)' : 'rgba(16, 185, 129, 0.08)',
-                        border: `1px solid ${isIncompat ? '#fca5a5' : isBehaviorDiff ? '#bae6fd' : isPartial ? '#fde68a' : '#a7f3d0'}`,
+                        backgroundColor: isIncompat ? 'rgba(194, 59, 59, 0.08)' : isBehaviorDiff ? 'rgba(36, 89, 201, 0.08)' : isPartial ? 'rgba(201, 162, 58, 0.08)' : 'rgba(34, 160, 107, 0.08)',
+                        border: `1px solid ${isIncompat ? '#edaaaa' : isBehaviorDiff ? '#cddcf9' : isPartial ? '#eddba6' : '#b9e2cf'}`,
                         padding: '0.85rem 1rem',
                         display: 'flex',
                         flexDirection: 'column',
@@ -706,15 +708,15 @@ export const AiQueryAssistantPage: React.FC = () => {
                       }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            {isCompat && <CheckCircle2 size={18} color="#10b981" />}
-                            {isIncompat && <AlertTriangle size={18} color="#ef4444" />}
-                            {isBehaviorDiff && <Info size={18} color="#0284c7" />}
-                            {isPartial && <AlertTriangle size={18} color="#f59e0b" />}
+                            {isCompat && <CheckCircle2 size={18} color="#22a06b" />}
+                            {isIncompat && <AlertTriangle size={18} color="#d04545" />}
+                            {isBehaviorDiff && <Info size={18} color="#2459c9" />}
+                            {isPartial && <AlertTriangle size={18} color="#c9a23a" />}
                             
                             <span style={{
                               fontWeight: 800,
                               fontSize: '0.85rem',
-                              color: isIncompat ? '#991b1b' : isBehaviorDiff ? '#0369a1' : isPartial ? '#92400e' : '#065f46',
+                              color: isIncompat ? '#8e2525' : isBehaviorDiff ? '#1c4db0' : isPartial ? '#7a5a12' : '#13623f',
                               textTransform: 'uppercase',
                               letterSpacing: '0.04em'
                             }}>
@@ -727,8 +729,8 @@ export const AiQueryAssistantPage: React.FC = () => {
                             <span style={{
                               padding: '0.15rem 0.5rem',
                               borderRadius: '4px',
-                              backgroundColor: '#dbeafe',
-                              color: '#1e40af',
+                              backgroundColor: '#e6eefc',
+                              color: '#163f94',
                               fontWeight: 700
                             }}>
                               MongoDB API: ✓ Supported
@@ -736,8 +738,8 @@ export const AiQueryAssistantPage: React.FC = () => {
                             <span style={{
                               padding: '0.15rem 0.5rem',
                               borderRadius: '4px',
-                              backgroundColor: compat.documentdb_supported ? '#d1fae5' : '#fee2e2',
-                              color: compat.documentdb_supported ? '#065f46' : '#991b1b',
+                              backgroundColor: compat.documentdb_supported ? '#e7f5ee' : '#fbeaea',
+                              color: compat.documentdb_supported ? '#13623f' : '#8e2525',
                               fontWeight: 700
                             }}>
                               DocumentDB {compat.documentdb_version}: {compat.documentdb_supported ? '✓ Supported' : '✕ Unsupported'}
@@ -746,7 +748,7 @@ export const AiQueryAssistantPage: React.FC = () => {
                         </div>
 
                         {/* Summary text */}
-                        <div style={{ fontSize: '0.8rem', color: isIncompat ? '#7f1d1d' : isBehaviorDiff ? '#0c4a6e' : isPartial ? '#78350f' : '#064e3b', lineHeight: 1.45 }}>
+                        <div style={{ fontSize: '0.8rem', color: isIncompat ? '#6e1d1d' : isBehaviorDiff ? '#163f94' : isPartial ? '#6e5210' : '#0f4f33', lineHeight: 1.45 }}>
                           {compat.summary}
                         </div>
 
@@ -756,19 +758,19 @@ export const AiQueryAssistantPage: React.FC = () => {
                             padding: '0.65rem 0.85rem',
                             backgroundColor: '#ffffff',
                             borderRadius: 'var(--radius-sm)',
-                            border: '1px solid #fecaca',
+                            border: '1px solid #f1c9c9',
                             fontSize: '0.78rem'
                           }}>
-                            <div style={{ fontWeight: 700, color: '#dc2626', marginBottom: '0.35rem' }}>
+                            <div style={{ fontWeight: 700, color: '#c23b3b', marginBottom: '0.35rem' }}>
                               ⚠ Amazon DocumentDB Compatibility Issues Detected:
                             </div>
                             {compat.issues.map((issue, iIdx) => (
                               <div key={iIdx} style={{ marginBottom: '0.4rem' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#b91c1c', fontWeight: 600 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#a93030', fontWeight: 600 }}>
                                   <XCircle size={13} />
                                   <span>Feature: {issue.feature}</span>
                                 </div>
-                                <p style={{ margin: '0.2rem 0 0.25rem 1.25rem', color: '#4b5563', lineHeight: 1.4 }}>
+                                <p style={{ margin: '0.2rem 0 0.25rem 1.25rem', color: '#4e5871', lineHeight: 1.4 }}>
                                   <strong>Why:</strong> {issue.message}
                                 </p>
                                 {issue.source && (
@@ -782,7 +784,7 @@ export const AiQueryAssistantPage: React.FC = () => {
                                       gap: '0.25rem',
                                       marginLeft: '1.25rem',
                                       fontSize: '0.72rem',
-                                      color: '#2563eb',
+                                      color: '#2459c9',
                                       textDecoration: 'none'
                                     }}
                                   >
@@ -801,19 +803,19 @@ export const AiQueryAssistantPage: React.FC = () => {
                             padding: '0.65rem 0.85rem',
                             backgroundColor: '#ffffff',
                             borderRadius: 'var(--radius-sm)',
-                            border: '1px solid #bae6fd',
+                            border: '1px solid #cddcf9',
                             fontSize: '0.78rem'
                           }}>
-                            <div style={{ fontWeight: 700, color: '#0284c7', marginBottom: '0.35rem' }}>
+                            <div style={{ fontWeight: 700, color: '#2459c9', marginBottom: '0.35rem' }}>
                               ℹ Functional & Behavioral Differences:
                             </div>
                             {compat.behavioral_differences.map((diff, dIdx) => (
                               <div key={dIdx} style={{ marginBottom: '0.4rem' }}>
-                                <div style={{ fontWeight: 600, color: '#0369a1' }}>• {diff.feature}:</div>
-                                <div style={{ paddingLeft: '0.75rem', color: '#475569', fontSize: '0.75rem', lineHeight: 1.4 }}>
+                                <div style={{ fontWeight: 600, color: '#1c4db0' }}>• {diff.feature}:</div>
+                                <div style={{ paddingLeft: '0.75rem', color: '#4e5871', fontSize: '0.75rem', lineHeight: 1.4 }}>
                                   <div><strong>MongoDB:</strong> {diff.mongodb_behavior}</div>
                                   <div><strong>DocumentDB:</strong> {diff.documentdb_behavior}</div>
-                                  <div style={{ color: '#0284c7' }}><strong>Impact:</strong> {diff.impact}</div>
+                                  <div style={{ color: '#2459c9' }}><strong>Impact:</strong> {diff.impact}</div>
                                 </div>
                               </div>
                             ))}
@@ -826,19 +828,19 @@ export const AiQueryAssistantPage: React.FC = () => {
                             marginTop: '0.25rem',
                             borderRadius: 'var(--radius-sm)',
                             overflow: 'hidden',
-                            border: '1px solid rgba(16, 185, 129, 0.4)',
-                            backgroundColor: '#06281e',
-                            color: '#f8fafc'
+                            border: '1px solid rgba(34, 160, 107, 0.4)',
+                            backgroundColor: '#0e1e42',
+                            color: '#f5f7fa'
                           }}>
                             <div style={{
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'space-between',
                               padding: '0.5rem 0.85rem',
-                              backgroundColor: '#0b3d2e',
-                              borderBottom: '1px solid rgba(52, 211, 153, 0.3)'
+                              backgroundColor: '#122650',
+                              borderBottom: '1px solid rgba(76, 192, 140, 0.3)'
                             }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.78rem', color: '#6ee7b7' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.78rem', color: '#8fd7b5' }}>
                                 <CheckCircle2 size={15} />
                                 <strong>DocumentDB-Compatible Alternative:</strong>
                               </div>
@@ -847,8 +849,8 @@ export const AiQueryAssistantPage: React.FC = () => {
                                 onClick={() => handleCopyQuery(compat.alternative_query, `alt-${msg.id}`)}
                                 className="btn btn-sm"
                                 style={{
-                                  backgroundColor: '#10b981',
-                                  color: '#022c22',
+                                  backgroundColor: '#22a06b',
+                                  color: '#0e1e42',
                                   fontWeight: 700,
                                   fontSize: '0.72rem',
                                   padding: '0.2rem 0.6rem'
@@ -868,7 +870,7 @@ export const AiQueryAssistantPage: React.FC = () => {
                               </button>
                             </div>
 
-                            <div style={{ padding: '0.5rem 0.85rem', fontSize: '0.75rem', color: '#a7f3d0' }}>
+                            <div style={{ padding: '0.5rem 0.85rem', fontSize: '0.75rem', color: '#b9e2cf' }}>
                               💡 <strong>Strategy:</strong> {compat.alternative_explanation || "Transformed to native Amazon DocumentDB syntax."}
                             </div>
 
@@ -876,22 +878,22 @@ export const AiQueryAssistantPage: React.FC = () => {
                               margin: 0,
                               padding: '0.75rem 0.85rem',
                               fontSize: '0.8rem',
-                              color: '#6ee7b7',
+                              color: '#8fd7b5',
                               lineHeight: '1.5',
                               overflowX: 'auto',
-                              backgroundColor: '#041f17'
+                              backgroundColor: '#0a1733'
                             }}>
                               <code>{`db.${resp.collection}.find(\n  ${JSON.stringify(compat.alternative_query, null, 2)}\n)`}</code>
                             </pre>
 
                             <div style={{
                               padding: '0.35rem 0.85rem',
-                              backgroundColor: '#031711',
+                              backgroundColor: '#0a1733',
                               display: 'flex',
                               alignItems: 'center',
                               gap: '0.35rem',
                               fontSize: '0.72rem',
-                              color: '#34d399'
+                              color: '#4cc08c'
                             }}>
                               <ShieldCheck size={13} />
                               <span>✓ Rules Engine Validated Alternative</span>
@@ -972,10 +974,10 @@ export const AiQueryAssistantPage: React.FC = () => {
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>
                         <span>
-                          Mongo: <strong style={{ color: item.mongo_execution_status === 'success' ? '#16a34a' : '#d97706' }}>{item.mongo_execution_status}</strong>
+                          Mongo: <strong style={{ color: item.mongo_execution_status === 'success' ? '#1e8e62' : '#a9801e' }}>{item.mongo_execution_status}</strong>
                         </span>
                         <span>
-                          DocDB: <strong style={{ color: item.documentdb_compatibility_status === 'COMPATIBLE' ? '#16a34a' : item.documentdb_compatibility_status === 'INCOMPATIBLE' ? '#dc2626' : '#0284c7' }}>{item.documentdb_compatibility_status}</strong>
+                          DocDB: <strong style={{ color: item.documentdb_compatibility_status === 'COMPATIBLE' ? '#1e8e62' : item.documentdb_compatibility_status === 'INCOMPATIBLE' ? '#c23b3b' : '#2459c9' }}>{item.documentdb_compatibility_status}</strong>
                         </span>
                       </div>
                       <div style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)' }}>

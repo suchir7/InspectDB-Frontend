@@ -54,7 +54,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           style={{
             position: 'fixed',
             inset: 0,
-            backgroundColor: 'rgba(15, 23, 42, 0.7)',
+            backgroundColor: 'rgba(10, 23, 51, 0.7)',
             zIndex: 90,
             backdropFilter: 'blur(2px)'
           }}
@@ -99,7 +99,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 justifyContent: 'center',
                 color: '#ffffff',
                 flexShrink: 0,
-                boxShadow: '0 2px 8px rgba(37, 99, 235, 0.4)'
+                boxShadow: '0 2px 8px rgba(36, 89, 201, 0.4)'
               }}>
                 <ShieldCheck size={22} />
               </div>
@@ -112,9 +112,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     letterSpacing: '-0.02em',
                     lineHeight: 1.1
                   }}>
-                    Inspect<span style={{ color: '#60a5fa' }}>DB</span>
+                    Inspect<span style={{ color: '#6b93ea' }}>DB</span>
                   </span>
-                  <span style={{ color: '#64748b', fontSize: '0.68rem', fontWeight: 500 }}>
+                  <span style={{ color: '#67718a', fontSize: '0.68rem', fontWeight: 500 }}>
                     Amazon DocDB System
                   </span>
                 </div>
@@ -186,7 +186,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* Backend Connection Indicator */}
           {!collapsed ? (
             <div style={{
-              backgroundColor: 'rgba(30, 41, 59, 0.7)',
+              backgroundColor: 'rgba(31, 42, 68, 0.7)',
               borderRadius: 'var(--radius-md)',
               padding: '0.6rem 0.75rem',
               display: 'flex',
@@ -195,17 +195,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
               fontSize: '0.75rem'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Server size={14} color="#94a3b8" />
-                <span style={{ color: '#cbd5e1' }}>API Engine</span>
+                <Server size={14} color="#8e97ac" />
+                <span style={{ color: '#c3c9d6' }}>API Engine</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                 <span style={{
                   width: 7,
                   height: 7,
                   borderRadius: '50%',
-                  backgroundColor: backendOnline ? '#10b981' : '#ef4444'
+                  backgroundColor: backendOnline ? '#22a06b' : '#d04545'
                 }} />
-                <span style={{ color: backendOnline ? '#34d399' : '#f87171', fontWeight: 600 }}>
+                <span style={{ color: backendOnline ? '#4cc08c' : '#e07a7a', fontWeight: 600 }}>
                   {backendOnline ? 'Online' : 'Offline'}
                 </span>
               </div>
@@ -219,7 +219,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 width: 8,
                 height: 8,
                 borderRadius: '50%',
-                backgroundColor: backendOnline ? '#10b981' : '#ef4444'
+                backgroundColor: backendOnline ? '#22a06b' : '#d04545'
               }} />
             </div>
           )}

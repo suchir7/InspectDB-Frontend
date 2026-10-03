@@ -27,23 +27,23 @@ export const JsonViewer: React.FC<JsonViewerProps> = ({
     <div style={{
       borderRadius: 'var(--radius-md)',
       overflow: 'hidden',
-      border: '1px solid #1e293b',
-      backgroundColor: '#0f172a'
+      border: '1px solid #1f2a44',
+      backgroundColor: '#0a1733'
     }}>
       <div style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '0.6rem 1rem',
-        backgroundColor: '#1e293b',
-        borderBottom: expanded ? '1px solid #334155' : 'none'
+        backgroundColor: '#1f2a44',
+        borderBottom: expanded ? '1px solid #36415a' : 'none'
       }}>
         <button
           onClick={() => setExpanded(!expanded)}
           style={{
             background: 'none',
             border: 'none',
-            color: '#f8fafc',
+            color: '#f5f7fa',
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem',
@@ -60,12 +60,12 @@ export const JsonViewer: React.FC<JsonViewerProps> = ({
           onClick={handleCopy}
           className="btn btn-ghost btn-sm"
           style={{
-            color: '#94a3b8',
+            color: '#8e97ac',
             fontSize: '0.75rem',
             padding: '0.2rem 0.5rem'
           }}
         >
-          {copied ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
+          {copied ? <Check size={14} color="#22a06b" /> : <Copy size={14} />}
           <span>{copied ? 'Copied' : 'Copy JSON'}</span>
         </button>
       </div>
@@ -77,7 +77,7 @@ export const JsonViewer: React.FC<JsonViewerProps> = ({
           maxHeight: '400px',
           overflowY: 'auto',
           fontSize: '0.82rem',
-          color: '#38bdf8',
+          color: '#6b93ea',
           lineHeight: '1.6'
         }}>
           <code>{jsonString}</code>

@@ -139,13 +139,13 @@ export const LandingPage: React.FC = () => {
             <div className="landing-logo-icon">
               <Database className="w-5 h-5 text-white" />
             </div>
-            <span>Inspect<span style={{ color: '#38bdf8' }}>DB</span></span>
+            <span>Inspect<span style={{ color: 'var(--gold-400)' }}>DB</span></span>
             <span style={{
               fontSize: '0.6875rem',
               fontFamily: 'var(--font-mono)',
-              background: 'rgba(56, 189, 248, 0.12)',
-              color: '#38bdf8',
-              border: '1px solid rgba(56, 189, 248, 0.3)',
+              background: 'rgba(201, 162, 58, 0.12)',
+              color: 'var(--gold-300)',
+              border: '1px solid rgba(201, 162, 58, 0.35)',
               padding: '0.15rem 0.45rem',
               borderRadius: '9999px',
               fontWeight: 600,
@@ -202,7 +202,7 @@ export const LandingPage: React.FC = () => {
           </h1>
 
           <p className="landing-hero-desc">
-            Store variable-schema inspection reports and query deeply nested documents. InspectDB diagnoses the critical bottleneck — <strong style={{ color: '#f8fafc' }}>high fixed cluster cost for small workloads</strong> — and cuts compute bills by up to 76% with automated scheduling.
+            Store variable-schema inspection reports and query deeply nested documents. InspectDB diagnoses the critical bottleneck — <strong style={{ color: '#f5f7fa' }}>high fixed cluster cost for small workloads</strong> — and cuts compute bills by up to 76% with automated scheduling.
           </p>
 
           <div className="landing-hero-actions">
@@ -218,7 +218,7 @@ export const LandingPage: React.FC = () => {
 
           {/* Quickstart Command Bar */}
           <div className="landing-command-bar">
-            <span style={{ color: '#94a3b8' }}>$</span>
+            <span style={{ color: '#8e97ac' }}>$</span>
             <span className="landing-command-text">npx @inspectdb/cli analyze --target=documentdb --region=us-east-1</span>
             <button
               onClick={() => handleCopy('npx @inspectdb/cli analyze --target=documentdb --region=us-east-1')}
@@ -266,7 +266,7 @@ export const LandingPage: React.FC = () => {
                 </button>
               </div>
 
-              <div style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: '#64748b' }}>
+              <div style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: '#67718a' }}>
                 latency: 3.8ms
               </div>
             </div>
@@ -274,31 +274,31 @@ export const LandingPage: React.FC = () => {
             <div className="landing-terminal-body">
               {activeHeroTab === 'bottleneck' && (
                 <div>
-                  <div style={{ color: '#38bdf8', marginBottom: '0.5rem' }}>
+                  <div style={{ color: '#7fa6f0', marginBottom: '0.5rem' }}>
                     // [InspectDB Bottleneck Diagnosis] Amazon DocumentDB Workload vs Provisioned Cluster
                   </div>
-                  <div style={{ color: '#f59e0b', marginBottom: '0.5rem' }}>
+                  <div style={{ color: '#c9a23a', marginBottom: '0.5rem' }}>
                     ⚠️ POTENTIAL UNDERUTILIZATION DETECTED: Low Ingestion Workload (~0.06 req/s) vs 24/7 Fixed Cluster
                   </div>
-                  <div style={{ color: '#94a3b8', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', marginBottom: '0.75rem' }}>
+                  <div style={{ color: '#8e97ac', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', marginBottom: '0.75rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                       <span>• Target Engine:</span>
                       <strong style={{ color: '#ffffff' }}>Amazon DocumentDB v4.0 (MongoDB 4.0 Wire Compatible)</strong>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                       <span>• Baseline 24/7 Spend (db.t3.medium @ $0.078/hr):</span>
-                      <strong style={{ color: '#ef4444' }}>$58.44 / month</strong>
+                      <strong style={{ color: '#d04545' }}>$58.44 / month</strong>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                       <span>• Optimized Scheduled Dev Spend (160 hrs/mo):</span>
-                      <strong style={{ color: '#10b981' }}>$13.98 / month (~76% savings)</strong>
+                      <strong style={{ color: '#c9a23a' }}>$13.98 / month (~76% savings)</strong>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <span>• Automated Action:</span>
-                      <span style={{ color: '#38bdf8' }}>AWS Lambda + EventBridge Start/Stop Policy Active</span>
+                      <span style={{ color: '#7fa6f0' }}>AWS Lambda + EventBridge Start/Stop Policy Active</span>
                     </div>
                   </div>
-                  <div style={{ color: '#64748b', fontSize: '0.8125rem' }}>
+                  <div style={{ color: '#67718a', fontSize: '0.8125rem' }}>
                     ✓ 0 fake metrics. All calculations based on AWS Rate-Cards and actual document storage payload.
                   </div>
                 </div>
@@ -306,10 +306,10 @@ export const LandingPage: React.FC = () => {
 
               {activeHeroTab === 'nested-query' && (
                 <div>
-                  <div style={{ color: '#38bdf8', marginBottom: '0.5rem' }}>
+                  <div style={{ color: '#7fa6f0', marginBottom: '0.5rem' }}>
                     // Querying nested variable-schema inspection reports with $elemMatch & deep path projection
                   </div>
-                  <pre style={{ margin: 0, color: '#e2e8f0' }}>
+                  <pre style={{ margin: 0, color: '#dfe3ec' }}>
 {`db.inspection_reports.find({
   "status": "APPROVED",
   "facility.environment.temperature_c": { $gte: 28.5 },
@@ -321,7 +321,7 @@ export const LandingPage: React.FC = () => {
   }
 }).project({ "report_id": 1, "sections.title": 1, "created_at": 1 })`}
                   </pre>
-                  <div style={{ marginTop: '0.75rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <div style={{ marginTop: '0.75rem', color: '#c9a23a', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <CheckCircle2 className="w-4 h-4" />
                     <span>Matched 3 documents in 4.1ms · Index used: facility_env_idx</span>
                   </div>
@@ -330,20 +330,20 @@ export const LandingPage: React.FC = () => {
 
               {activeHeroTab === 'ai-assistant' && (
                 <div>
-                  <div style={{ color: '#a855f7', marginBottom: '0.5rem' }}>
+                  <div style={{ color: '#c9a23a', marginBottom: '0.5rem' }}>
                     // [InspectDB AI Query Engine] Natural Language → Validated DocumentDB MQL
                   </div>
-                  <div style={{ background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.3)', padding: '0.6rem 0.85rem', borderRadius: '8px', marginBottom: '0.75rem', color: '#f3e8ff' }}>
+                  <div style={{ background: 'rgba(201, 162, 58, 0.1)', border: '1px solid rgba(201, 162, 58, 0.3)', padding: '0.6rem 0.85rem', borderRadius: '8px', marginBottom: '0.75rem', color: '#f8f0da' }}>
                     💬 Prompt: "Find all HVAC inspections with high severity issues that are still pending review"
                   </div>
-                  <pre style={{ margin: 0, color: '#38bdf8' }}>
+                  <pre style={{ margin: 0, color: '#7fa6f0' }}>
 {`{
   "inspection_domain": "HVAC",
   "review_status": "PENDING_REVIEW",
   "sections.findings.severity": "HIGH"
 }`}
                   </pre>
-                  <div style={{ marginTop: '0.6rem', color: '#94a3b8', fontSize: '0.8125rem' }}>
+                  <div style={{ marginTop: '0.6rem', color: '#8e97ac', fontSize: '0.8125rem' }}>
                     🛡️ Verified by Safe MQL Abstract Syntax Tree Validator (No destructive write operators).
                   </div>
                 </div>
@@ -351,25 +351,25 @@ export const LandingPage: React.FC = () => {
 
               {activeHeroTab === 'health-score' && (
                 <div>
-                  <div style={{ color: '#10b981', marginBottom: '0.5rem' }}>
+                  <div style={{ color: '#c9a23a', marginBottom: '0.5rem' }}>
                     // [Architecture Health Score: 85 / 100] Explainable Workload Sizing
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem', marginTop: '0.75rem' }}>
                     <div style={{ background: 'rgba(255,255,255,0.03)', padding: '0.75rem', borderRadius: '8px' }}>
-                      <div style={{ color: '#cbd5e1', fontSize: '0.8125rem' }}>Workload Sizing (25/30)</div>
-                      <div style={{ color: '#34d399', fontWeight: 700 }}>Aligned with db.t3.medium</div>
+                      <div style={{ color: '#c3c9d6', fontSize: '0.8125rem' }}>Workload Sizing (25/30)</div>
+                      <div style={{ color: '#d8b860', fontWeight: 700 }}>Aligned with db.t3.medium</div>
                     </div>
                     <div style={{ background: 'rgba(255,255,255,0.03)', padding: '0.75rem', borderRadius: '8px' }}>
-                      <div style={{ color: '#cbd5e1', fontSize: '0.8125rem' }}>Compute Efficiency (20/30)</div>
-                      <div style={{ color: '#f59e0b', fontWeight: 700 }}>Schedule Dev active (~76% saved)</div>
+                      <div style={{ color: '#c3c9d6', fontSize: '0.8125rem' }}>Compute Efficiency (20/30)</div>
+                      <div style={{ color: '#c9a23a', fontWeight: 700 }}>Schedule Dev active (~76% saved)</div>
                     </div>
                     <div style={{ background: 'rgba(255,255,255,0.03)', padding: '0.75rem', borderRadius: '8px' }}>
-                      <div style={{ color: '#cbd5e1', fontSize: '0.8125rem' }}>Schema Optimization (20/20)</div>
-                      <div style={{ color: '#34d399', fontWeight: 700 }}>Embedded findings structure</div>
+                      <div style={{ color: '#c3c9d6', fontSize: '0.8125rem' }}>Schema Optimization (20/20)</div>
+                      <div style={{ color: '#d8b860', fontWeight: 700 }}>Embedded findings structure</div>
                     </div>
                     <div style={{ background: 'rgba(255,255,255,0.03)', padding: '0.75rem', borderRadius: '8px' }}>
-                      <div style={{ color: '#cbd5e1', fontSize: '0.8125rem' }}>VPC & Multi-AZ (20/20)</div>
-                      <div style={{ color: '#34d399', fontWeight: 700 }}>Isolated subnet routing</div>
+                      <div style={{ color: '#c3c9d6', fontSize: '0.8125rem' }}>VPC & Multi-AZ (20/20)</div>
+                      <div style={{ color: '#d8b860', fontWeight: 700 }}>Isolated subnet routing</div>
                     </div>
                   </div>
                 </div>
@@ -380,19 +380,19 @@ export const LandingPage: React.FC = () => {
           {/* Social Proof & Metrics Ribbon */}
           <div className="landing-stats-grid">
             <div className="landing-stat-card">
-              <div className="landing-stat-val" style={{ color: '#34d399' }}>76%</div>
+              <div className="landing-stat-val" style={{ color: '#d8b860' }}>76%</div>
               <div className="landing-stat-label">Fixed Compute Reduction with Scheduled Dev</div>
             </div>
             <div className="landing-stat-card">
-              <div className="landing-stat-val" style={{ color: '#38bdf8' }}>$13.98<span style={{ fontSize: '1rem', color: '#94a3b8' }}>/mo</span></div>
+              <div className="landing-stat-val" style={{ color: '#7fa6f0' }}>$13.98<span style={{ fontSize: '1rem', color: '#8e97ac' }}>/mo</span></div>
               <div className="landing-stat-label">Optimized Dev Baseline vs $58.44 24/7 Cluster</div>
             </div>
             <div className="landing-stat-card">
-              <div className="landing-stat-val" style={{ color: '#f59e0b' }}>0</div>
+              <div className="landing-stat-val" style={{ color: '#c9a23a' }}>0</div>
               <div className="landing-stat-label">Fabricated Telemetry · 100% Rate-Card Math</div>
             </div>
             <div className="landing-stat-card">
-              <div className="landing-stat-val" style={{ color: '#a855f7' }}>&lt; 5ms</div>
+              <div className="landing-stat-val" style={{ color: '#c9a23a' }}>&lt; 5ms</div>
               <div className="landing-stat-label">P99 Deep Nested MQL Query Latency</div>
             </div>
           </div>
@@ -429,7 +429,7 @@ export const LandingPage: React.FC = () => {
                     onChange={(e) => setDocCount(Number(e.target.value))}
                     className="landing-range-input"
                   />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#64748b', marginTop: '0.35rem', fontFamily: 'var(--font-mono)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#67718a', marginTop: '0.35rem', fontFamily: 'var(--font-mono)' }}>
                     <span>1,000</span>
                     <span>250,000</span>
                     <span>500,000</span>
@@ -452,7 +452,7 @@ export const LandingPage: React.FC = () => {
                     onChange={(e) => setDailyOps(Number(e.target.value))}
                     className="landing-range-input"
                   />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#64748b', marginTop: '0.35rem', fontFamily: 'var(--font-mono)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#67718a', marginTop: '0.35rem', fontFamily: 'var(--font-mono)' }}>
                     <span>1,000 ops</span>
                     <span>50,000 ops</span>
                     <span>100,000 ops</span>
@@ -464,7 +464,7 @@ export const LandingPage: React.FC = () => {
                 <div className="landing-slider-group">
                   <div className="landing-slider-header">
                     <span className="landing-slider-title">Amazon DocumentDB Instance Class</span>
-                    <span style={{ fontSize: '0.8125rem', color: '#94a3b8' }}>Rate: ${costCalculations.hourlyRate}/hr</span>
+                    <span style={{ fontSize: '0.8125rem', color: '#8e97ac' }}>Rate: ${costCalculations.hourlyRate}/hr</span>
                   </div>
                   <div className="landing-radio-cards">
                     <div
@@ -472,24 +472,24 @@ export const LandingPage: React.FC = () => {
                       onClick={() => setInstanceType('t3.medium')}
                     >
                       <div style={{ fontWeight: 700, color: '#ffffff', fontSize: '0.875rem' }}>db.t3.medium</div>
-                      <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>2 vCPU · 4 GB RAM</div>
-                      <div style={{ fontSize: '0.75rem', color: '#38bdf8', marginTop: '0.25rem', fontFamily: 'var(--font-mono)' }}>$0.078/hr</div>
+                      <div style={{ fontSize: '0.75rem', color: '#8e97ac' }}>2 vCPU · 4 GB RAM</div>
+                      <div style={{ fontSize: '0.75rem', color: '#7fa6f0', marginTop: '0.25rem', fontFamily: 'var(--font-mono)' }}>$0.078/hr</div>
                     </div>
                     <div
                       className={`landing-radio-card ${instanceType === 'r5.large' ? 'active' : ''}`}
                       onClick={() => setInstanceType('r5.large')}
                     >
                       <div style={{ fontWeight: 700, color: '#ffffff', fontSize: '0.875rem' }}>db.r5.large</div>
-                      <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>2 vCPU · 16 GB RAM</div>
-                      <div style={{ fontSize: '0.75rem', color: '#38bdf8', marginTop: '0.25rem', fontFamily: 'var(--font-mono)' }}>$0.277/hr</div>
+                      <div style={{ fontSize: '0.75rem', color: '#8e97ac' }}>2 vCPU · 16 GB RAM</div>
+                      <div style={{ fontSize: '0.75rem', color: '#7fa6f0', marginTop: '0.25rem', fontFamily: 'var(--font-mono)' }}>$0.277/hr</div>
                     </div>
                     <div
                       className={`landing-radio-card ${instanceType === 'r5.2xlarge' ? 'active' : ''}`}
                       onClick={() => setInstanceType('r5.2xlarge')}
                     >
                       <div style={{ fontWeight: 700, color: '#ffffff', fontSize: '0.875rem' }}>db.r5.2xlarge</div>
-                      <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>8 vCPU · 64 GB RAM</div>
-                      <div style={{ fontSize: '0.75rem', color: '#38bdf8', marginTop: '0.25rem', fontFamily: 'var(--font-mono)' }}>$1.108/hr</div>
+                      <div style={{ fontSize: '0.75rem', color: '#8e97ac' }}>8 vCPU · 64 GB RAM</div>
+                      <div style={{ fontSize: '0.75rem', color: '#7fa6f0', marginTop: '0.25rem', fontFamily: 'var(--font-mono)' }}>$1.108/hr</div>
                     </div>
                   </div>
                 </div>
@@ -504,31 +504,31 @@ export const LandingPage: React.FC = () => {
                       className={`landing-radio-card ${scheduleMode === 'scheduled' ? 'active' : ''}`}
                       onClick={() => setScheduleMode('scheduled')}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700, color: '#34d399', fontSize: '0.875rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700, color: '#d8b860', fontSize: '0.875rem' }}>
                         <Clock className="w-3.5 h-3.5" />
                         <span>Scheduled Dev</span>
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.2rem' }}>8h/day (M-F) = 160h/mo</div>
+                      <div style={{ fontSize: '0.75rem', color: '#8e97ac', marginTop: '0.2rem' }}>8h/day (M-F) = 160h/mo</div>
                     </div>
                     <div
                       className={`landing-radio-card ${scheduleMode === 'continuous' ? 'active' : ''}`}
                       onClick={() => setScheduleMode('continuous')}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700, color: '#f59e0b', fontSize: '0.875rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700, color: '#c9a23a', fontSize: '0.875rem' }}>
                         <Activity className="w-3.5 h-3.5" />
                         <span>Continuous 24/7</span>
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.2rem' }}>744h/mo non-stop</div>
+                      <div style={{ fontSize: '0.75rem', color: '#8e97ac', marginTop: '0.2rem' }}>744h/mo non-stop</div>
                     </div>
                     <div
                       className={`landing-radio-card ${scheduleMode === 'local' ? 'active' : ''}`}
                       onClick={() => setScheduleMode('local')}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700, color: '#38bdf8', fontSize: '0.875rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700, color: '#7fa6f0', fontSize: '0.875rem' }}>
                         <Server className="w-3.5 h-3.5" />
                         <span>Local Sandbox</span>
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.2rem' }}>In-memory ($0.00)</div>
+                      <div style={{ fontSize: '0.75rem', color: '#8e97ac', marginTop: '0.2rem' }}>In-memory ($0.00)</div>
                     </div>
                   </div>
                 </div>
@@ -542,36 +542,36 @@ export const LandingPage: React.FC = () => {
                     <span>Projected Savings: ${costCalculations.savings} / month ({costCalculations.savingsPct}%)</span>
                   </div>
 
-                  <div style={{ fontSize: '0.8125rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>
+                  <div style={{ fontSize: '0.8125rem', color: '#8e97ac', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>
                     Estimated Total Monthly Spend
                   </div>
                   <div style={{ fontSize: '2.75rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.03em', lineHeight: 1 }}>
                     ${costCalculations.totalActual}
-                    <span style={{ fontSize: '1rem', color: '#94a3b8', fontWeight: 500 }}> / month</span>
+                    <span style={{ fontSize: '1rem', color: '#8e97ac', fontWeight: 500 }}> / month</span>
                   </div>
                   {scheduleMode === 'scheduled' && (
-                    <div style={{ fontSize: '0.8125rem', color: '#ef4444', textDecoration: 'line-through', marginTop: '0.35rem' }}>
+                    <div style={{ fontSize: '0.8125rem', color: '#d04545', textDecoration: 'line-through', marginTop: '0.35rem' }}>
                       Unoptimized 24/7 Spend: ${costCalculations.totalContinuous}/mo
                     </div>
                   )}
 
                   <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', margin: '1.5rem 0', paddingTop: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.65rem', fontSize: '0.875rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#c3c9d6' }}>
                       <span>Compute ({costCalculations.hoursPerMonth} hrs @ ${costCalculations.hourlyRate}/hr):</span>
                       <strong style={{ color: '#ffffff', fontFamily: 'var(--font-mono)' }}>${costCalculations.actualCompute}</strong>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#c3c9d6' }}>
                       <span>Cluster Storage ({costCalculations.totalGB} GB @ $0.10/GB):</span>
                       <strong style={{ color: '#ffffff', fontFamily: 'var(--font-mono)' }}>${costCalculations.storageCost}</strong>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#c3c9d6' }}>
                       <span>I/O Operations ({((dailyOps * 30) / 1000).toFixed(0)}k reqs @ $0.20/1M):</span>
                       <strong style={{ color: '#ffffff', fontFamily: 'var(--font-mono)' }}>${costCalculations.ioCost}</strong>
                     </div>
                   </div>
                 </div>
 
-                <div style={{ background: 'rgba(37, 99, 235, 0.12)', border: '1px solid rgba(59, 130, 246, 0.3)', padding: '1rem', borderRadius: '12px', fontSize: '0.8125rem', color: '#93c5fd' }}>
+                <div style={{ background: 'rgba(36, 89, 201, 0.12)', border: '1px solid rgba(58, 111, 224, 0.3)', padding: '1rem', borderRadius: '12px', fontSize: '0.8125rem', color: '#a3bdf3' }}>
                   💡 <strong>Recommendation:</strong> For {docCount.toLocaleString()} inspection documents, a scheduled <strong>{instanceType}</strong> configuration keeps infrastructure costs low while providing full DocumentDB query compatibility.
                 </div>
               </div>
@@ -604,8 +604,8 @@ export const LandingPage: React.FC = () => {
                 key={step.num}
                 onClick={() => setActiveWorkflowStep(step.num)}
                 style={{
-                  background: activeWorkflowStep === step.num ? 'rgba(37, 99, 235, 0.2)' : 'rgba(15, 23, 42, 0.6)',
-                  border: `1px solid ${activeWorkflowStep === step.num ? '#2563eb' : 'rgba(255, 255, 255, 0.08)'}`,
+                  background: activeWorkflowStep === step.num ? 'rgba(36, 89, 201, 0.2)' : 'rgba(10, 23, 51, 0.6)',
+                  border: `1px solid ${activeWorkflowStep === step.num ? '#2459c9' : 'rgba(255, 255, 255, 0.08)'}`,
                   padding: '1rem',
                   borderRadius: '14px',
                   cursor: 'pointer',
@@ -617,7 +617,7 @@ export const LandingPage: React.FC = () => {
                     width: '22px',
                     height: '22px',
                     borderRadius: '50%',
-                    background: activeWorkflowStep === step.num ? '#2563eb' : 'rgba(255, 255, 255, 0.1)',
+                    background: activeWorkflowStep === step.num ? '#2459c9' : 'rgba(255, 255, 255, 0.1)',
                     color: '#ffffff',
                     display: 'flex',
                     alignItems: 'center',
@@ -629,7 +629,7 @@ export const LandingPage: React.FC = () => {
                   </span>
                   <span style={{ fontWeight: 700, color: '#ffffff', fontSize: '0.875rem' }}>{step.title}</span>
                 </div>
-                <div style={{ fontSize: '0.75rem', color: '#94a3b8', paddingLeft: '1.85rem' }}>{step.desc}</div>
+                <div style={{ fontSize: '0.75rem', color: '#8e97ac', paddingLeft: '1.85rem' }}>{step.desc}</div>
               </div>
             ))}
           </div>
@@ -641,17 +641,17 @@ export const LandingPage: React.FC = () => {
                   <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.5rem' }}>
                     Step 1: Connect or Run in Local Academic Sandbox
                   </h3>
-                  <p style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+                  <p style={{ color: '#8e97ac', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
                     InspectDB operates seamlessly in Phase 1 Local Demo Mode with zero cloud dependencies or connects directly to your Amazon DocumentDB cluster endpoint inside your VPC.
                   </p>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8125rem', background: '#090e1a', padding: '0.85rem', borderRadius: '10px', color: '#38bdf8' }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8125rem', background: '#060e22', padding: '0.85rem', borderRadius: '10px', color: '#7fa6f0' }}>
                     $ export DOCUMENTDB_URI="mongodb://user:pass@docdb-cluster.cluster-xyz.us-east-1.docdb.amazonaws.com:27017/?tls=true"
                   </div>
                 </div>
-                <div style={{ background: '#090e1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '1.25rem', fontFamily: 'var(--font-mono)', fontSize: '0.8125rem' }}>
-                  <div style={{ color: '#10b981' }}>✓ Local In-Memory Repository: READY</div>
-                  <div style={{ color: '#cbd5e1' }}>✓ Neon PostgreSQL Auth: CONNECTED</div>
-                  <div style={{ color: '#f59e0b' }}>✓ CloudWatch Telemetry: Awaiting IAM Link</div>
+                <div style={{ background: '#060e22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '1.25rem', fontFamily: 'var(--font-mono)', fontSize: '0.8125rem' }}>
+                  <div style={{ color: '#c9a23a' }}>✓ Local In-Memory Repository: READY</div>
+                  <div style={{ color: '#c3c9d6' }}>✓ Neon PostgreSQL Auth: CONNECTED</div>
+                  <div style={{ color: '#c9a23a' }}>✓ CloudWatch Telemetry: Awaiting IAM Link</div>
                 </div>
               </div>
             )}
@@ -662,15 +662,15 @@ export const LandingPage: React.FC = () => {
                   <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.5rem' }}>
                     Step 2: Variable-Schema Document Ingestion
                   </h3>
-                  <p style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+                  <p style={{ color: '#8e97ac', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
                     Store complex inspection reports across manufacturing, building safety, and aerospace domains. Nested objects and polymorphic arrays are indexed automatically without tedious SQL migrations.
                   </p>
                   <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    <span style={{ background: 'rgba(56, 189, 248, 0.12)', color: '#38bdf8', padding: '0.25rem 0.65rem', borderRadius: '6px', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>99 Discovered Paths</span>
-                    <span style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#34d399', padding: '0.25rem 0.65rem', borderRadius: '6px', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>7 Nested Arrays</span>
+                    <span style={{ background: 'rgba(127, 166, 240, 0.12)', color: '#7fa6f0', padding: '0.25rem 0.65rem', borderRadius: '6px', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>99 Discovered Paths</span>
+                    <span style={{ background: 'rgba(201, 162, 58, 0.12)', color: '#d8b860', padding: '0.25rem 0.65rem', borderRadius: '6px', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>7 Nested Arrays</span>
                   </div>
                 </div>
-                <div style={{ background: '#090e1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '1rem', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#cbd5e1' }}>
+                <div style={{ background: '#060e22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '1rem', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#c3c9d6' }}>
                   <pre style={{ margin: 0 }}>
 {`{
   "report_id": "REP-2026-001",
@@ -695,18 +695,18 @@ export const LandingPage: React.FC = () => {
                   <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.5rem' }}>
                     Step 3: Automated Spend Ceilings & Auto-Pause
                   </h3>
-                  <p style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+                  <p style={{ color: '#8e97ac', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
                     Enforce an AWS Budgets guardrail that halts development clusters over nights and weekends before runaway billing occurs.
                   </p>
-                  <div style={{ color: '#34d399', fontSize: '0.875rem', fontWeight: 600 }}>
+                  <div style={{ color: '#d8b860', fontSize: '0.875rem', fontWeight: 600 }}>
                     ⚡ Saves up to $44.46/month per developer sandbox.
                   </div>
                 </div>
-                <div style={{ background: '#090e1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '1rem', fontFamily: 'var(--font-mono)', fontSize: '0.8125rem' }}>
-                  <div style={{ color: '#f59e0b' }}>guardrails:</div>
-                  <div style={{ color: '#cbd5e1', paddingLeft: '1rem' }}>monthly_ceiling_usd: 25</div>
-                  <div style={{ color: '#cbd5e1', paddingLeft: '1rem' }}>auto_pause_schedule: "0 20 * * 1-5"</div>
-                  <div style={{ color: '#10b981', paddingLeft: '1rem' }}>pause_on_breach: true</div>
+                <div style={{ background: '#060e22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '1rem', fontFamily: 'var(--font-mono)', fontSize: '0.8125rem' }}>
+                  <div style={{ color: '#c9a23a' }}>guardrails:</div>
+                  <div style={{ color: '#c3c9d6', paddingLeft: '1rem' }}>monthly_ceiling_usd: 25</div>
+                  <div style={{ color: '#c3c9d6', paddingLeft: '1rem' }}>auto_pause_schedule: "0 20 * * 1-5"</div>
+                  <div style={{ color: '#c9a23a', paddingLeft: '1rem' }}>pause_on_breach: true</div>
                 </div>
               </div>
             )}
@@ -717,7 +717,7 @@ export const LandingPage: React.FC = () => {
                   <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.5rem' }}>
                     Step 4: AI-Assisted Nested Document Queries
                   </h3>
-                  <p style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+                  <p style={{ color: '#8e97ac', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
                     Ask questions in natural English. InspectDB translates them into performant DocumentDB MongoDB MQL queries with `$elemMatch` filter clauses and projections.
                   </p>
                   <Link to="/ai-assistant" className="landing-btn-ghost" style={{ fontSize: '0.8125rem' }}>
@@ -725,7 +725,7 @@ export const LandingPage: React.FC = () => {
                     <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
-                <div style={{ background: '#090e1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '1rem', fontFamily: 'var(--font-mono)', fontSize: '0.8125rem', color: '#38bdf8' }}>
+                <div style={{ background: '#060e22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '1rem', fontFamily: 'var(--font-mono)', fontSize: '0.8125rem', color: '#7fa6f0' }}>
                   // AI Query Pipeline Output<br />
                   {'db.reports.find({ "sections.findings.status": "OPEN" })'}
                 </div>
@@ -738,22 +738,22 @@ export const LandingPage: React.FC = () => {
                   <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.5rem' }}>
                     Step 5: CloudWatch Cost Driver Attribution
                   </h3>
-                  <p style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+                  <p style={{ color: '#8e97ac', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
                     Track exact spending proportions. For small workloads, 96.2% of costs originate from idle instance uptime rather than storage or query operations.
                   </p>
                 </div>
-                <div style={{ background: '#090e1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '1rem', fontSize: '0.8125rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: '#cbd5e1' }}>
+                <div style={{ background: '#060e22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '1rem', fontSize: '0.8125rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: '#c3c9d6' }}>
                     <span>Instance Hours (Compute):</span>
-                    <strong style={{ color: '#ef4444' }}>96.2%</strong>
+                    <strong style={{ color: '#d04545' }}>96.2%</strong>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: '#cbd5e1' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: '#c3c9d6' }}>
                     <span>Cluster Storage:</span>
-                    <strong style={{ color: '#38bdf8' }}>2.6%</strong>
+                    <strong style={{ color: '#7fa6f0' }}>2.6%</strong>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#cbd5e1' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#c3c9d6' }}>
                     <span>I/O Operations:</span>
-                    <strong style={{ color: '#34d399' }}>1.2%</strong>
+                    <strong style={{ color: '#d8b860' }}>1.2%</strong>
                   </div>
                 </div>
               </div>
@@ -765,15 +765,15 @@ export const LandingPage: React.FC = () => {
                   <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.5rem' }}>
                     Step 6: What-If Downsizing & Operator Approval
                   </h3>
-                  <p style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
+                  <p style={{ color: '#8e97ac', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1rem' }}>
                     InspectDB recommends cluster resizing and scheduling adjustments. You evaluate the simulated impact and decide when to apply changes via Terraform or AWS Console.
                   </p>
                 </div>
-                <div style={{ background: '#090e1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '1rem', textAlign: 'center' }}>
-                  <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#10b981', marginBottom: '0.25rem' }}>
+                <div style={{ background: '#060e22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '1rem', textAlign: 'center' }}>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#c9a23a', marginBottom: '0.25rem' }}>
                     Human-in-the-Loop Governance
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                  <div style={{ fontSize: '0.75rem', color: '#8e97ac' }}>
                     No unannounced destructive actions or surprise downtime.
                   </div>
                 </div>
@@ -806,7 +806,7 @@ export const LandingPage: React.FC = () => {
             </div>
 
             <div className="landing-bento-item">
-              <div className="landing-bento-icon" style={{ background: 'rgba(16, 185, 129, 0.15)', borderColor: 'rgba(16, 185, 129, 0.3)', color: '#34d399' }}>
+              <div className="landing-bento-icon" style={{ background: 'rgba(201, 162, 58, 0.15)', borderColor: 'rgba(201, 162, 58, 0.3)', color: '#d8b860' }}>
                 <Clock className="w-5 h-5" />
               </div>
               <h3 className="landing-bento-title">Automated Cluster Schedulers</h3>
@@ -816,7 +816,7 @@ export const LandingPage: React.FC = () => {
             </div>
 
             <div className="landing-bento-item">
-              <div className="landing-bento-icon" style={{ background: 'rgba(168, 85, 247, 0.15)', borderColor: 'rgba(168, 85, 247, 0.3)', color: '#c084fc' }}>
+              <div className="landing-bento-icon" style={{ background: 'rgba(201, 162, 58, 0.15)', borderColor: 'rgba(201, 162, 58, 0.3)', color: '#d8b860' }}>
                 <Sparkles className="w-5 h-5" />
               </div>
               <h3 className="landing-bento-title">Explainable AI Assistant</h3>
@@ -826,7 +826,7 @@ export const LandingPage: React.FC = () => {
             </div>
 
             <div className="landing-bento-item">
-              <div className="landing-bento-icon" style={{ background: 'rgba(245, 158, 11, 0.15)', borderColor: 'rgba(245, 158, 11, 0.3)', color: '#fbbf24' }}>
+              <div className="landing-bento-icon" style={{ background: 'rgba(201, 162, 58, 0.15)', borderColor: 'rgba(201, 162, 58, 0.3)', color: '#d8b860' }}>
                 <SearchCode className="w-5 h-5" />
               </div>
               <h3 className="landing-bento-title">Deep Nested Indexing</h3>
@@ -836,7 +836,7 @@ export const LandingPage: React.FC = () => {
             </div>
 
             <div className="landing-bento-item">
-              <div className="landing-bento-icon" style={{ background: 'rgba(239, 68, 68, 0.15)', borderColor: 'rgba(239, 68, 68, 0.3)', color: '#f87171' }}>
+              <div className="landing-bento-icon" style={{ background: 'rgba(194, 59, 59, 0.15)', borderColor: 'rgba(194, 59, 59, 0.3)', color: '#e07a7a' }}>
                 <ShieldCheck className="w-5 h-5" />
               </div>
               <h3 className="landing-bento-title">Zero Fabricated Data Policy</h3>
@@ -846,7 +846,7 @@ export const LandingPage: React.FC = () => {
             </div>
 
             <div className="landing-bento-item">
-              <div className="landing-bento-icon" style={{ background: 'rgba(56, 189, 248, 0.15)', borderColor: 'rgba(56, 189, 248, 0.3)', color: '#38bdf8' }}>
+              <div className="landing-bento-icon" style={{ background: 'rgba(127, 166, 240, 0.15)', borderColor: 'rgba(127, 166, 240, 0.3)', color: '#7fa6f0' }}>
                 <HardDrive className="w-5 h-5" />
               </div>
               <h3 className="landing-bento-title">1-Click S3 / JSON Export</h3>
@@ -882,43 +882,43 @@ export const LandingPage: React.FC = () => {
               </thead>
               <tbody>
                 <tr>
-                  <td style={{ color: '#f1f5f9', fontWeight: 600 }}>Small Workload Cost</td>
-                  <td className="highlight" style={{ color: '#34d399' }}>$13.98/mo (Scheduled)</td>
+                  <td style={{ color: '#eceff5', fontWeight: 600 }}>Small Workload Cost</td>
+                  <td className="highlight" style={{ color: '#d8b860' }}>$13.98/mo (Scheduled)</td>
                   <td>$57.00/mo (Fixed M10)</td>
                   <td>$38.00/mo + Ops Time</td>
                   <td>$15.00/mo</td>
                 </tr>
                 <tr>
-                  <td style={{ color: '#f1f5f9', fontWeight: 600 }}>Variable-Schema Agility</td>
-                  <td className="highlight" style={{ color: '#34d399' }}>Native JSON / BSON</td>
+                  <td style={{ color: '#eceff5', fontWeight: 600 }}>Variable-Schema Agility</td>
+                  <td className="highlight" style={{ color: '#d8b860' }}>Native JSON / BSON</td>
                   <td>Native JSON / BSON</td>
                   <td>Native JSON / BSON</td>
                   <td>Rigid DDL or JSONB query tax</td>
                 </tr>
                 <tr>
-                  <td style={{ color: '#f1f5f9', fontWeight: 600 }}>Nested Subdocument Querying</td>
-                  <td className="highlight" style={{ color: '#34d399' }}>Full $elemMatch & MQL</td>
+                  <td style={{ color: '#eceff5', fontWeight: 600 }}>Nested Subdocument Querying</td>
+                  <td className="highlight" style={{ color: '#d8b860' }}>Full $elemMatch & MQL</td>
                   <td>Full MQL</td>
                   <td>Full MQL</td>
                   <td>Complex jsonb_extract_path</td>
                 </tr>
                 <tr>
-                  <td style={{ color: '#f1f5f9', fontWeight: 600 }}>AWS VPC & IAM Integration</td>
-                  <td className="highlight" style={{ color: '#34d399' }}>Native AWS VPC Endpoint</td>
+                  <td style={{ color: '#eceff5', fontWeight: 600 }}>AWS VPC & IAM Integration</td>
+                  <td className="highlight" style={{ color: '#d8b860' }}>Native AWS VPC Endpoint</td>
                   <td>External VPC Peering</td>
                   <td>Manual Security Groups</td>
                   <td>Native RDS / Aurora</td>
                 </tr>
                 <tr>
-                  <td style={{ color: '#f1f5f9', fontWeight: 600 }}>Automated Idle Dev Auto-Pause</td>
-                  <td className="highlight" style={{ color: '#34d399' }}>Built-in Lambda/EventBridge</td>
+                  <td style={{ color: '#eceff5', fontWeight: 600 }}>Automated Idle Dev Auto-Pause</td>
+                  <td className="highlight" style={{ color: '#d8b860' }}>Built-in Lambda/EventBridge</td>
                   <td>Requires custom API scripts</td>
                   <td>Manual EC2 Stop</td>
                   <td>Aurora Serverless v2</td>
                 </tr>
                 <tr>
-                  <td style={{ color: '#f1f5f9', fontWeight: 600 }}>Built-in AI Query Assistant</td>
-                  <td className="highlight" style={{ color: '#34d399' }}>Included with AST Guard</td>
+                  <td style={{ color: '#eceff5', fontWeight: 600 }}>Built-in AI Query Assistant</td>
+                  <td className="highlight" style={{ color: '#d8b860' }}>Included with AST Guard</td>
                   <td>Paid add-on</td>
                   <td>None</td>
                   <td>None</td>
@@ -939,11 +939,11 @@ export const LandingPage: React.FC = () => {
               Choose the right operational model for your team—from zero-cost local developer sandboxes to high-availability production clusters.
             </p>
 
-            <div style={{ display: 'inline-flex', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', padding: '0.25rem', borderRadius: '10px', marginTop: '1.5rem' }}>
+            <div style={{ display: 'inline-flex', background: 'rgba(10, 23, 51, 0.8)', border: '1px solid rgba(255, 255, 255, 0.1)', padding: '0.25rem', borderRadius: '10px', marginTop: '1.5rem' }}>
               <button
                 onClick={() => setBillingCycle('monthly')}
                 style={{
-                  background: billingCycle === 'monthly' ? '#2563eb' : 'transparent',
+                  background: billingCycle === 'monthly' ? '#2459c9' : 'transparent',
                   color: '#ffffff',
                   border: 'none',
                   padding: '0.45rem 1rem',
@@ -958,7 +958,7 @@ export const LandingPage: React.FC = () => {
               <button
                 onClick={() => setBillingCycle('semester')}
                 style={{
-                  background: billingCycle === 'semester' ? '#2563eb' : 'transparent',
+                  background: billingCycle === 'semester' ? '#2459c9' : 'transparent',
                   color: '#ffffff',
                   border: 'none',
                   padding: '0.45rem 1rem',
@@ -980,7 +980,7 @@ export const LandingPage: React.FC = () => {
                 <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.25rem' }}>
                   Local Developer
                 </div>
-                <p style={{ fontSize: '0.8125rem', color: '#94a3b8', minHeight: '40px' }}>
+                <p style={{ fontSize: '0.8125rem', color: '#8e97ac', minHeight: '40px' }}>
                   Zero-cost in-memory sandbox for rapid prototyping, offline testing, and university projects.
                 </p>
                 <div style={{ margin: '1.5rem 0' }}>
@@ -1006,11 +1006,11 @@ export const LandingPage: React.FC = () => {
                 <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.25rem' }}>
                   Scheduled Dev Cluster
                 </div>
-                <p style={{ fontSize: '0.8125rem', color: '#94a3b8', minHeight: '40px' }}>
+                <p style={{ fontSize: '0.8125rem', color: '#8e97ac', minHeight: '40px' }}>
                   db.t3.medium (2 vCPU / 4GB) running 8h/day on weekdays with automated off-hours pause.
                 </p>
                 <div style={{ margin: '1.5rem 0' }}>
-                  <span className="landing-price-val" style={{ color: '#34d399' }}>
+                  <span className="landing-price-val" style={{ color: '#d8b860' }}>
                     ${billingCycle === 'monthly' ? '13.98' : '55.92'}
                   </span>
                   <span className="landing-price-period"> {billingCycle === 'monthly' ? '/ month' : '/ semester'}</span>
@@ -1034,7 +1034,7 @@ export const LandingPage: React.FC = () => {
                 <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.25rem' }}>
                   Continuous 24/7 Dev
                 </div>
-                <p style={{ fontSize: '0.8125rem', color: '#94a3b8', minHeight: '40px' }}>
+                <p style={{ fontSize: '0.8125rem', color: '#8e97ac', minHeight: '40px' }}>
                   db.t3.medium running non-stop 744 hours/month for always-on staging pipelines.
                 </p>
                 <div style={{ margin: '1.5rem 0' }}>
@@ -1061,7 +1061,7 @@ export const LandingPage: React.FC = () => {
                 <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', marginBottom: '0.25rem' }}>
                   Production Multi-AZ
                 </div>
-                <p style={{ fontSize: '0.8125rem', color: '#94a3b8', minHeight: '40px' }}>
+                <p style={{ fontSize: '0.8125rem', color: '#8e97ac', minHeight: '40px' }}>
                   2× db.r5.large instances across 3 Availability Zones with automatic failover.
                 </p>
                 <div style={{ margin: '1.5rem 0' }}>
@@ -1148,7 +1148,7 @@ export const LandingPage: React.FC = () => {
         {/* QUICKSTART / RUNBOOK CTA SECTION */}
         {/* ========================================================================= */}
         <section style={{ marginBottom: '6rem' }}>
-          <div className="landing-glass-card" style={{ textAlign: 'center', padding: '3.5rem 2rem', background: 'radial-gradient(circle at 50% 0%, rgba(37, 99, 235, 0.2) 0%, rgba(15, 23, 42, 0.9) 70%)', borderColor: 'rgba(59, 130, 246, 0.4)' }}>
+          <div className="landing-glass-card" style={{ textAlign: 'center', padding: '3.5rem 2rem', background: 'radial-gradient(circle at 50% 0%, rgba(36, 89, 201, 0.2) 0%, rgba(10, 23, 51, 0.9) 70%)', borderColor: 'rgba(58, 111, 224, 0.4)' }}>
             <span className="landing-badge" style={{ marginBottom: '1rem' }}>
               <Terminal className="w-3.5 h-3.5" />
               <span>Get the AWS DocumentDB Cost Optimization Runbook</span>
@@ -1158,12 +1158,12 @@ export const LandingPage: React.FC = () => {
               Deploy in under six minutes on your AWS Sandbox
             </h2>
 
-            <p style={{ color: '#94a3b8', maxWidth: '600px', margin: '0 auto 2rem auto', fontSize: '0.95rem', lineHeight: 1.6 }}>
+            <p style={{ color: '#8e97ac', maxWidth: '600px', margin: '0 auto 2rem auto', fontSize: '0.95rem', lineHeight: 1.6 }}>
               Receive our step-by-step CloudFormation template, scheduled start/stop Lambda script, and DocumentDB nested query cheat sheet.
             </p>
 
             {runbookSent ? (
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.6rem', background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.4)', padding: '0.75rem 1.5rem', borderRadius: '12px', color: '#34d399', fontWeight: 600 }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.6rem', background: 'rgba(201, 162, 58, 0.15)', border: '1px solid rgba(201, 162, 58, 0.4)', padding: '0.75rem 1.5rem', borderRadius: '12px', color: '#d8b860', fontWeight: 600 }}>
                 <CheckCircle2 className="w-5 h-5" />
                 <span>Optimization Runbook & CloudFormation templates dispatched to your email!</span>
               </div>
@@ -1177,7 +1177,7 @@ export const LandingPage: React.FC = () => {
                   style={{
                     flex: 1,
                     minWidth: '240px',
-                    background: 'rgba(15, 23, 42, 0.8)',
+                    background: 'rgba(10, 23, 51, 0.8)',
                     border: '1px solid rgba(255, 255, 255, 0.15)',
                     padding: '0.65rem 1rem',
                     borderRadius: '10px',
@@ -1194,7 +1194,7 @@ export const LandingPage: React.FC = () => {
             )}
 
             {runbookError && (
-              <div style={{ color: '#ef4444', fontSize: '0.8125rem', marginTop: '0.5rem' }}>
+              <div style={{ color: '#d04545', fontSize: '0.8125rem', marginTop: '0.5rem' }}>
                 {runbookError}
               </div>
             )}
@@ -1222,9 +1222,9 @@ export const LandingPage: React.FC = () => {
                 <div className="landing-logo-icon">
                   <Database className="w-4 h-4 text-white" />
                 </div>
-                <span>Inspect<span style={{ color: '#38bdf8' }}>DB</span></span>
+                <span>Inspect<span style={{ color: '#7fa6f0' }}>DB</span></span>
               </div>
-              <p style={{ color: '#64748b', fontSize: '0.875rem', lineHeight: 1.6, maxWidth: '320px' }}>
+              <p style={{ color: '#67718a', fontSize: '0.875rem', lineHeight: 1.6, maxWidth: '320px' }}>
                 The workload analyzer and cost optimization platform for Amazon DocumentDB. Designed for variable-schema applications and lean cloud budgets.
               </p>
             </div>
@@ -1264,7 +1264,7 @@ export const LandingPage: React.FC = () => {
             <div>
               © 2026 InspectDB. All rights reserved. Amazon DocumentDB is a trademark of Amazon Web Services, Inc.
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#10b981', fontFamily: 'var(--font-mono)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#c9a23a', fontFamily: 'var(--font-mono)' }}>
               <span className="landing-pulse-dot" style={{ width: '6px', height: '6px' }} />
               <span>Engine Status: Amazon DocumentDB v4.0 Wire Compatible</span>
             </div>

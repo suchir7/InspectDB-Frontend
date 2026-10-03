@@ -50,9 +50,9 @@ const DOMAIN_CATALOG: DomainCardInfo[] = [
     name: 'Electrical Grid & Power',
     categoryKey: 'Electrical',
     icon: <Zap size={18} />,
-    color: '#d97706',
-    bgLight: '#fffbeb',
-    borderColor: '#fde68a',
+    color: '#a9801e',
+    bgLight: '#fbf5e4',
+    borderColor: '#eddba6',
     telemetryKey: 'electrical_telemetry',
     sampleFields: ['phases.phase_a.voltage_kv', 'current_amps', 'frequency_hz', 'harmonics_thd_pct'],
     description: 'High-voltage substations, transformers, phase harmonics & thermal loads'
@@ -61,9 +61,9 @@ const DOMAIN_CATALOG: DomainCardInfo[] = [
     name: 'Fire Safety & Life Protection',
     categoryKey: 'Fire Safety',
     icon: <Flame size={18} />,
-    color: '#dc2626',
-    bgLight: '#fee2e2',
-    borderColor: '#fecaca',
+    color: '#c23b3b',
+    bgLight: '#fbeaea',
+    borderColor: '#f1c9c9',
     telemetryKey: 'fire_safety_data',
     sampleFields: ['suppression_system', 'alarm_panel_status', 'extinguisher_count', 'egress_routes'],
     description: 'Commercial high-rises, emergency egress, suppression valves & smoke sensors'
@@ -72,9 +72,9 @@ const DOMAIN_CATALOG: DomainCardInfo[] = [
     name: 'Industrial Heavy Machinery',
     categoryKey: 'Equipment',
     icon: <Wrench size={18} />,
-    color: '#0284c7',
-    bgLight: '#f0f9ff',
-    borderColor: '#bae6fd',
+    color: '#2459c9',
+    bgLight: '#f3f7fe',
+    borderColor: '#cddcf9',
     telemetryKey: 'equipment_telemetry',
     sampleFields: ['vibration_velocity_mm_s', 'bearing_temp_c', 'operating_hours', 'lubricant_state'],
     description: 'Centrifugal pumps, turbine generators, rotating assemblies & bearing vibration'
@@ -83,9 +83,9 @@ const DOMAIN_CATALOG: DomainCardInfo[] = [
     name: 'Civil Structural Engineering',
     categoryKey: 'Structural',
     icon: <Building2 size={18} />,
-    color: '#7c3aed',
-    bgLight: '#f5f3ff',
-    borderColor: '#ddd6fe',
+    color: '#a9801e',
+    bgLight: '#fcf8ed',
+    borderColor: '#f0e2b8',
     telemetryKey: 'structural_telemetry',
     sampleFields: ['crack_width_mm', 'deflection_mm', 'load_rating_tons', 'corrosion_rating'],
     description: 'Bridges, concrete piers, load-bearing columns & foundation displacement'
@@ -94,9 +94,9 @@ const DOMAIN_CATALOG: DomainCardInfo[] = [
     name: 'HazMat & Environmental',
     categoryKey: 'Environmental',
     icon: <ShieldAlert size={18} />,
-    color: '#059669',
-    bgLight: '#ecfdf5',
-    borderColor: '#a7f3d0',
+    color: '#1e8e62',
+    bgLight: '#e9f6f0',
+    borderColor: '#b9e2cf',
     telemetryKey: 'hazmat_telemetry',
     sampleFields: ['voc_ppm', 'containment_integrity', 'ph_level', 'spill_mitigation_ready'],
     description: 'Chemical processing, toxic airborne VOC levels, containment seals & runoff'
@@ -105,9 +105,9 @@ const DOMAIN_CATALOG: DomainCardInfo[] = [
     name: 'Commercial HVAC Systems',
     categoryKey: 'HVAC',
     icon: <Thermometer size={18} />,
-    color: '#0891b2',
-    bgLight: '#ecfeff',
-    borderColor: '#a5f3fc',
+    color: '#2459c9',
+    bgLight: '#f3f7fe',
+    borderColor: '#cddcf9',
     telemetryKey: 'hvac_telemetry',
     sampleFields: ['chilled_water_temp_c', 'refrigerant_psi', 'airflow_cfm', 'cop_efficiency'],
     description: 'Rooftop chillers, variable air volume units, compressor delta & airflow'
@@ -163,20 +163,22 @@ export const DashboardPage: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Truthful Local Demo Mode Banner */}
+      {/* Local demo notice: only shown when no live DocumentDB cluster is connected */}
+      {stats && !stats.aws_connected && (
       <div style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '0.75rem 1.25rem',
-        borderRadius: 'var(--radius-lg)',
-        backgroundColor: '#eff6ff',
-        border: '1px solid #bfdbfe',
-        color: '#1e40af',
-        fontSize: '0.85rem'
+        padding: '0.7rem 1.1rem',
+        borderRadius: 'var(--radius-md)',
+        background: 'linear-gradient(90deg, var(--gold-50) 0%, var(--color-bg-surface) 70%)',
+        border: '1px solid var(--gold-200)',
+        borderLeft: '3px solid var(--gold-500)',
+        color: 'var(--color-text-secondary)',
+        fontSize: '0.84rem'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-          <Info size={18} color="#2563eb" style={{ flexShrink: 0 }} />
+          <Info size={17} color="#8a6716" style={{ flexShrink: 0 }} />
           <span>
             <strong>Local Demo Mode:</strong> Dashboard metrics are calculated dynamically from the application's local inspection repository. No live Amazon DocumentDB cluster, CloudWatch telemetry, or live AWS billing is currently connected.
           </span>
@@ -186,14 +188,16 @@ export const DashboardPage: React.FC = () => {
           fontWeight: 700,
           padding: '0.2rem 0.6rem',
           borderRadius: 'var(--radius-full)',
-          backgroundColor: '#dbeafe',
-          color: '#1e40af',
+          backgroundColor: 'var(--navy-900)',
+          color: 'var(--gold-300)',
+          border: '1px solid rgba(201, 162, 58, 0.35)',
           whiteSpace: 'nowrap',
           marginLeft: '1rem'
         }}>
           Phase 1 Architecture
         </span>
       </div>
+      )}
 
       {/* Header & Quick Actions */}
       <div style={{
@@ -296,7 +300,7 @@ export const DashboardPage: React.FC = () => {
               </div>
               <div style={{ fontSize: '0.825rem', fontWeight: 700, color: 'var(--color-text-primary)' }}>
                 {stats?.storage_mode || 'Local In-Memory Repository'}{' '}
-                <span style={{ fontSize: '0.72rem', color: stats?.aws_connected ? '#059669' : '#64748b', fontWeight: 500 }}>
+                <span style={{ fontSize: '0.72rem', color: stats?.aws_connected ? '#1e8e62' : '#67718a', fontWeight: 500 }}>
                   {stats?.aws_connected ? '(AWS DocDB Connected)' : '(AWS DocDB Not Connected)'}
                 </span>
               </div>
@@ -311,11 +315,11 @@ export const DashboardPage: React.FC = () => {
               width: 32,
               height: 32,
               borderRadius: 'var(--radius-md)',
-              backgroundColor: '#ecfdf5',
+              backgroundColor: '#e9f6f0',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#059669'
+              color: '#1e8e62'
             }}>
               <Boxes size={18} />
             </div>
@@ -323,7 +327,7 @@ export const DashboardPage: React.FC = () => {
               <div style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>
                 Discovered Schema Paths
               </div>
-              <div style={{ fontSize: '0.825rem', fontWeight: 700, color: '#059669' }}>
+              <div style={{ fontSize: '0.825rem', fontWeight: 700, color: '#1e8e62' }}>
                 {schemaOverview && totalReports > 0
                   ? `${schemaOverview.nested_fields_count} Nested Fields • ${schemaOverview.arrays_count} Arrays`
                   : totalReports === 0 ? '0 Discovered Paths (Empty Repository)' : 'Analyzing Schema...'}
@@ -339,11 +343,11 @@ export const DashboardPage: React.FC = () => {
               width: 32,
               height: 32,
               borderRadius: 'var(--radius-md)',
-              backgroundColor: '#fffbeb',
+              backgroundColor: '#fbf5e4',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#d97706'
+              color: '#a9801e'
             }}>
               <DollarSign size={18} />
             </div>
@@ -351,7 +355,7 @@ export const DashboardPage: React.FC = () => {
               <div style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>
                 Estimated Cost Sizing Model
               </div>
-              <div style={{ fontSize: '0.825rem', fontWeight: 700, color: '#d97706' }}>
+              <div style={{ fontSize: '0.825rem', fontWeight: 700, color: '#a9801e' }}>
                 $0.00/mo (Local Dev) • $13.98/mo (Scheduled Dev Estimate)
               </div>
             </div>
@@ -388,7 +392,7 @@ export const DashboardPage: React.FC = () => {
               <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Total Reports
               </div>
-              <div style={{ fontSize: '1.85rem', fontWeight: 800, color: 'var(--color-text-primary)', marginTop: '0.2rem', lineHeight: 1.1 }}>
+              <div style={{ fontSize: '2.15rem', fontWeight: 600, fontFamily: 'var(--font-display)', letterSpacing: '-0.01em', color: 'var(--color-text-primary)', marginTop: '0.2rem', lineHeight: 1.1 }}>
                 {stats?.total_reports ?? 0}
               </div>
             </div>
@@ -420,7 +424,7 @@ export const DashboardPage: React.FC = () => {
               <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 High & Critical Findings
               </div>
-              <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#dc2626', marginTop: '0.2rem', lineHeight: 1.1 }}>
+              <div style={{ fontSize: '2.15rem', fontWeight: 600, fontFamily: 'var(--font-display)', letterSpacing: '-0.01em', color: '#c23b3b', marginTop: '0.2rem', lineHeight: 1.1 }}>
                 {stats?.high_severity_findings ?? 0}
               </div>
             </div>
@@ -428,16 +432,16 @@ export const DashboardPage: React.FC = () => {
               width: 44,
               height: 44,
               borderRadius: 'var(--radius-lg)',
-              backgroundColor: '#fee2e2',
+              backgroundColor: '#fbeaea',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#dc2626'
+              color: '#c23b3b'
             }}>
               <AlertOctagon size={22} />
             </div>
           </div>
-          <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.72rem', color: '#991b1b' }}>
+          <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.72rem', color: '#8e2525' }}>
             <span>Source: Document Findings</span>
             <span style={{ fontWeight: 600 }}>Parsed from findings arrays</span>
           </div>
@@ -450,7 +454,7 @@ export const DashboardPage: React.FC = () => {
               <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Pending Review
               </div>
-              <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#d97706', marginTop: '0.2rem', lineHeight: 1.1 }}>
+              <div style={{ fontSize: '2.15rem', fontWeight: 600, fontFamily: 'var(--font-display)', letterSpacing: '-0.01em', color: '#a9801e', marginTop: '0.2rem', lineHeight: 1.1 }}>
                 {stats?.reports_requiring_attention ?? 0}
               </div>
             </div>
@@ -458,16 +462,16 @@ export const DashboardPage: React.FC = () => {
               width: 44,
               height: 44,
               borderRadius: 'var(--radius-lg)',
-              backgroundColor: '#fffbeb',
+              backgroundColor: '#fbf5e4',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#d97706'
+              color: '#a9801e'
             }}>
               <Clock size={22} />
             </div>
           </div>
-          <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.72rem', color: '#92400e' }}>
+          <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.72rem', color: '#7a5a12' }}>
             <span>Source: Report Status Evaluator</span>
             <span style={{ fontWeight: 600 }}>Action needed / in review</span>
           </div>
@@ -480,7 +484,7 @@ export const DashboardPage: React.FC = () => {
               <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Completed & Passed
               </div>
-              <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#059669', marginTop: '0.2rem', lineHeight: 1.1 }}>
+              <div style={{ fontSize: '2.15rem', fontWeight: 600, fontFamily: 'var(--font-display)', letterSpacing: '-0.01em', color: '#1e8e62', marginTop: '0.2rem', lineHeight: 1.1 }}>
                 {stats?.completed_inspections ?? 0}
               </div>
             </div>
@@ -488,16 +492,16 @@ export const DashboardPage: React.FC = () => {
               width: 44,
               height: 44,
               borderRadius: 'var(--radius-lg)',
-              backgroundColor: '#ecfdf5',
+              backgroundColor: '#e9f6f0',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#059669'
+              color: '#1e8e62'
             }}>
               <CheckCircle size={22} />
             </div>
           </div>
-          <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.72rem', color: '#065f46' }}>
+          <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.72rem', color: '#13623f' }}>
             <span>Source: Compliance Verification</span>
             <span style={{ fontWeight: 600 }}>Zero open violations</span>
           </div>
@@ -506,8 +510,8 @@ export const DashboardPage: React.FC = () => {
 
       {/* Empty State Banner if no reports exist */}
       {totalReports === 0 && !loading && (
-        <div className="card" style={{ padding: '2.5rem 1.5rem', textAlign: 'center', backgroundColor: '#f8fafc', border: '1px dashed #cbd5e1' }}>
-          <FolderOpen size={44} color="#94a3b8" style={{ margin: '0 auto 0.75rem' }} />
+        <div className="card" style={{ padding: '2.5rem 1.5rem', textAlign: 'center', backgroundColor: '#f5f7fa', border: '1px dashed #c3c9d6' }}>
+          <FolderOpen size={44} color="#8e97ac" style={{ margin: '0 auto 0.75rem' }} />
           <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: '0.35rem' }}>
             No Inspection Data in Repository
           </h3>
@@ -933,7 +937,7 @@ export const DashboardPage: React.FC = () => {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.7)',
+          backgroundColor: 'rgba(10, 23, 51, 0.7)',
           backdropFilter: 'blur(4px)',
           display: 'flex',
           alignItems: 'center',
@@ -942,8 +946,8 @@ export const DashboardPage: React.FC = () => {
           padding: '1.5rem'
         }}>
           <div style={{
-            backgroundColor: '#0f172a',
-            color: '#f8fafc',
+            backgroundColor: '#0a1733',
+            color: '#f5f7fa',
             borderRadius: 'var(--radius-xl)',
             width: '100%',
             maxWidth: '780px',
@@ -952,12 +956,12 @@ export const DashboardPage: React.FC = () => {
             flexDirection: 'column',
             overflow: 'hidden',
             boxShadow: 'var(--shadow-xl)',
-            border: '1px solid #334155'
+            border: '1px solid #36415a'
           }}>
             {/* Modal Header */}
             <div style={{
               padding: '1rem 1.25rem',
-              borderBottom: '1px solid #334155',
+              borderBottom: '1px solid #36415a',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between'
@@ -965,10 +969,10 @@ export const DashboardPage: React.FC = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                 <FileCode size={20} color="var(--color-primary)" />
                 <div>
-                  <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#f8fafc' }}>
+                  <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#f5f7fa' }}>
                     Document JSON: {previewReport.id}
                   </h4>
-                  <p style={{ margin: 0, fontSize: '0.75rem', color: '#94a3b8' }}>
+                  <p style={{ margin: 0, fontSize: '0.75rem', color: '#8e97ac' }}>
                     {previewReport.title} ({previewReport.category})
                   </p>
                 </div>
@@ -977,15 +981,15 @@ export const DashboardPage: React.FC = () => {
                 <button
                   onClick={() => handleCopyJson(previewReport)}
                   className="btn btn-secondary btn-sm"
-                  style={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#f8fafc' }}
+                  style={{ backgroundColor: '#1f2a44', borderColor: '#36415a', color: '#f5f7fa' }}
                 >
-                  {copiedJson ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
+                  {copiedJson ? <Check size={14} color="#22a06b" /> : <Copy size={14} />}
                   <span>{copiedJson ? 'Copied!' : 'Copy JSON'}</span>
                 </button>
                 <button
                   onClick={() => setPreviewReport(null)}
                   className="btn btn-secondary btn-sm"
-                  style={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#f8fafc' }}
+                  style={{ backgroundColor: '#1f2a44', borderColor: '#36415a', color: '#f5f7fa' }}
                 >
                   ✕ Close
                 </button>
@@ -993,13 +997,13 @@ export const DashboardPage: React.FC = () => {
             </div>
 
             {/* Modal Code Body */}
-            <div style={{ padding: '1.25rem', overflowY: 'auto', flex: 1, backgroundColor: '#090d16' }}>
+            <div style={{ padding: '1.25rem', overflowY: 'auto', flex: 1, backgroundColor: '#060e22' }}>
               <pre style={{
                 margin: 0,
                 fontFamily: 'var(--font-mono)',
                 fontSize: '0.8rem',
                 lineHeight: 1.5,
-                color: '#38bdf8'
+                color: '#6b93ea'
               }}>
                 {JSON.stringify(previewReport, null, 2)}
               </pre>
@@ -1008,13 +1012,13 @@ export const DashboardPage: React.FC = () => {
             {/* Modal Footer */}
             <div style={{
               padding: '0.75rem 1.25rem',
-              borderTop: '1px solid #334155',
+              borderTop: '1px solid #36415a',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              backgroundColor: '#0f172a'
+              backgroundColor: '#0a1733'
             }}>
-              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+              <span style={{ fontSize: '0.75rem', color: '#8e97ac' }}>
                 Polymorphic BSON Document Collection: <code>inspection_reports</code>
               </span>
               <Link

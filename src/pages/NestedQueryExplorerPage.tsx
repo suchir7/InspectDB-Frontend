@@ -470,12 +470,12 @@ export const NestedQueryExplorerPage: React.FC = () => {
               width: 40,
               height: 40,
               borderRadius: 'var(--radius-md)',
-              backgroundColor: '#2563eb',
+              backgroundColor: '#2459c9',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               color: '#ffffff',
-              boxShadow: '0 4px 14px rgba(37, 99, 235, 0.35)'
+              boxShadow: '0 4px 14px rgba(36, 89, 201, 0.35)'
             }}>
               <SearchCode size={22} />
             </div>
@@ -503,7 +503,7 @@ export const NestedQueryExplorerPage: React.FC = () => {
               fontWeight: 700,
               padding: '0.65rem 1.35rem',
               borderRadius: 'var(--radius-md)',
-              boxShadow: '0 4px 14px rgba(37, 99, 235, 0.35)'
+              boxShadow: '0 4px 14px rgba(36, 89, 201, 0.35)'
             }}
           >
             {executing ? (
@@ -523,8 +523,8 @@ export const NestedQueryExplorerPage: React.FC = () => {
 
       {/* LOCAL DEMO MODE DISCLAIMER */}
       <div style={{
-        backgroundColor: '#eff6ff',
-        border: '1px solid #bfdbfe',
+        backgroundColor: '#f3f7fe',
+        border: '1px solid #cddcf9',
         borderRadius: 'var(--radius-md)',
         padding: '0.75rem 1.15rem',
         display: 'flex',
@@ -533,10 +533,10 @@ export const NestedQueryExplorerPage: React.FC = () => {
         flexWrap: 'wrap',
         gap: '0.75rem',
         fontSize: '0.8rem',
-        color: '#1e40af'
+        color: '#163f94'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-          <Database size={18} color="#2563eb" style={{ flexShrink: 0 }} />
+          <Database size={18} color="#2459c9" style={{ flexShrink: 0 }} />
           <div>
             <strong>Amazon DocumentDB Nested Query Laboratory (Phase 1):</strong> Queries are currently evaluated against the local variable-schema inspection dataset with full MongoDB dot-notation and $elemMatch semantics. <strong>Live Amazon DocumentDB cluster connection will be enabled in Phase 2.</strong>
           </div>
@@ -545,12 +545,12 @@ export const NestedQueryExplorerPage: React.FC = () => {
           <button
             onClick={() => setShowSchemaTree(!showSchemaTree)}
             className="btn btn-ghost btn-sm"
-            style={{ fontSize: '0.75rem', color: '#1e40af', padding: '0.2rem 0.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+            style={{ fontSize: '0.75rem', color: '#163f94', padding: '0.2rem 0.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
           >
             <FolderTree size={14} />
             <span>{showSchemaTree ? 'Hide Schema Tree' : 'Explore Document Schema'}</span>
           </button>
-          <span style={{ fontSize: '0.72rem', fontWeight: 700, backgroundColor: '#dbeafe', padding: '0.2rem 0.55rem', borderRadius: 'var(--radius-full)', color: '#1d4ed8' }}>
+          <span style={{ fontSize: '0.72rem', fontWeight: 700, backgroundColor: '#e6eefc', padding: '0.2rem 0.55rem', borderRadius: 'var(--radius-full)', color: '#1c4db0' }}>
             {store.isDocumentDb ? 'Amazon DocumentDB Engine' : store.mode === 'mongodb' ? 'Local MongoDB Engine' : 'Local In-Memory Engine'}
           </span>
         </div>
@@ -559,14 +559,14 @@ export const NestedQueryExplorerPage: React.FC = () => {
       {/* NOTIFICATIONS */}
       {errorBanner && (
         <div style={{
-          backgroundColor: '#fef2f2',
-          border: '1px solid #fecaca',
+          backgroundColor: '#fbeded',
+          border: '1px solid #f1c9c9',
           borderRadius: 'var(--radius-md)',
           padding: '0.85rem 1rem',
           display: 'flex',
           alignItems: 'center',
           gap: '0.75rem',
-          color: '#991b1b',
+          color: '#8e2525',
           fontSize: '0.85rem'
         }}>
           <AlertTriangle size={18} style={{ flexShrink: 0 }} />
@@ -576,14 +576,14 @@ export const NestedQueryExplorerPage: React.FC = () => {
 
       {successBanner && (
         <div style={{
-          backgroundColor: '#ecfdf5',
-          border: '1px solid #a7f3d0',
+          backgroundColor: '#e9f6f0',
+          border: '1px solid #b9e2cf',
           borderRadius: 'var(--radius-md)',
           padding: '0.85rem 1rem',
           display: 'flex',
           alignItems: 'center',
           gap: '0.75rem',
-          color: '#065f46',
+          color: '#13623f',
           fontSize: '0.85rem'
         }}>
           <CheckCircle2 size={18} style={{ flexShrink: 0 }} />
@@ -594,7 +594,7 @@ export const NestedQueryExplorerPage: React.FC = () => {
       {/* 2. QUERY OVERVIEW PANEL (TOP STATISTICS) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.85rem' }}>
         <div className="card" style={{ padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ width: 36, height: 36, borderRadius: 'var(--radius-sm)', backgroundColor: 'rgba(37, 99, 235, 0.1)', color: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 36, height: 36, borderRadius: 'var(--radius-sm)', backgroundColor: 'rgba(36, 89, 201, 0.1)', color: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <FileJson size={18} />
           </div>
           <div>
@@ -608,7 +608,7 @@ export const NestedQueryExplorerPage: React.FC = () => {
         </div>
 
         <div className="card" style={{ padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ width: 36, height: 36, borderRadius: 'var(--radius-sm)', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 36, height: 36, borderRadius: 'var(--radius-sm)', backgroundColor: 'rgba(34, 160, 107, 0.1)', color: '#22a06b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <FolderTree size={18} />
           </div>
           <div>
@@ -622,7 +622,7 @@ export const NestedQueryExplorerPage: React.FC = () => {
         </div>
 
         <div className="card" style={{ padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ width: 36, height: 36, borderRadius: 'var(--radius-sm)', backgroundColor: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 36, height: 36, borderRadius: 'var(--radius-sm)', backgroundColor: 'rgba(201, 162, 58, 0.1)', color: '#c9a23a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Layers size={18} />
           </div>
           <div>
@@ -636,7 +636,7 @@ export const NestedQueryExplorerPage: React.FC = () => {
         </div>
 
         <div className="card" style={{ padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ width: 36, height: 36, borderRadius: 'var(--radius-sm)', backgroundColor: 'rgba(168, 85, 247, 0.1)', color: '#a855f7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 36, height: 36, borderRadius: 'var(--radius-sm)', backgroundColor: 'rgba(201, 162, 58, 0.1)', color: '#c9a23a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Sliders size={18} />
           </div>
           <div>
@@ -650,7 +650,7 @@ export const NestedQueryExplorerPage: React.FC = () => {
         </div>
 
         <div className="card" style={{ padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ width: 36, height: 36, borderRadius: 'var(--radius-sm)', backgroundColor: 'rgba(100, 116, 139, 0.1)', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: 36, height: 36, borderRadius: 'var(--radius-sm)', backgroundColor: 'rgba(103, 113, 138, 0.1)', color: '#67718a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Clock size={18} />
           </div>
           <div>
@@ -725,8 +725,8 @@ export const NestedQueryExplorerPage: React.FC = () => {
                     textTransform: 'uppercase',
                     padding: '0.1rem 0.35rem',
                     borderRadius: 'var(--radius-sm)',
-                    backgroundColor: field.is_variable_schema ? '#fef3c7' : '#f1f5f9',
-                    color: field.is_variable_schema ? '#92400e' : '#475569',
+                    backgroundColor: field.is_variable_schema ? '#fbf4e2' : '#eceff5',
+                    color: field.is_variable_schema ? '#7a5a12' : '#4e5871',
                     fontWeight: 600
                   }}>
                     {field.field_type}
@@ -793,7 +793,7 @@ export const NestedQueryExplorerPage: React.FC = () => {
       {activeTab === 'presets' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '0.75rem' }}>
           {QUERY_PRESETS.map(preset => {
-            const compColor = preset.complexity === 'Simple' ? '#10b981' : preset.complexity === 'Moderate' ? '#3b82f6' : preset.complexity === 'Complex' ? '#f59e0b' : '#ef4444';
+            const compColor = preset.complexity === 'Simple' ? '#22a06b' : preset.complexity === 'Moderate' ? '#3a6fe0' : preset.complexity === 'Complex' ? '#c9a23a' : '#d04545';
             return (
               <button
                 key={preset.id}
@@ -1152,14 +1152,14 @@ export const NestedQueryExplorerPage: React.FC = () => {
                 style={{
                   fontFamily: 'var(--font-mono)',
                   fontSize: '0.8rem',
-                  backgroundColor: '#0f172a',
-                  color: '#38bdf8',
+                  backgroundColor: '#0a1733',
+                  color: '#6b93ea',
                   lineHeight: 1.45,
                   padding: '0.75rem'
                 }}
               />
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.72rem', color: queryValidation.isValid ? '#10b981' : '#ef4444' }}>
+                <span style={{ fontSize: '0.72rem', color: queryValidation.isValid ? '#22a06b' : '#d04545' }}>
                   {queryValidation.message}
                 </span>
                 <button
@@ -1191,25 +1191,25 @@ export const NestedQueryExplorerPage: React.FC = () => {
               className="btn btn-secondary btn-sm"
               style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem' }}
             >
-              {copiedQuery ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
+              {copiedQuery ? <Check size={14} color="#22a06b" /> : <Copy size={14} />}
               <span>{copiedQuery ? 'Copied' : 'Copy Query'}</span>
             </button>
           </div>
 
           {/* Dark Syntax Query Box */}
           <div style={{
-            backgroundColor: '#0f172a',
-            color: '#f8fafc',
+            backgroundColor: '#0a1733',
+            color: '#f5f7fa',
             borderRadius: 'var(--radius-md)',
             padding: '1rem',
             fontFamily: 'var(--font-mono)',
             fontSize: '0.8rem',
             overflowX: 'auto',
-            border: '1px solid #334155'
+            border: '1px solid #36415a'
           }}>
-            <div style={{ color: '#94a3b8', marginBottom: '0.35rem' }}>// Target: inspection_reports</div>
-            <span style={{ color: '#f472b6' }}>db.inspection_reports.find</span>(
-            <pre style={{ margin: '0.2rem 0 0 1rem', color: '#38bdf8' }}>
+            <div style={{ color: '#8e97ac', marginBottom: '0.35rem' }}>// Target: inspection_reports</div>
+            <span style={{ color: '#d8b860' }}>db.inspection_reports.find</span>(
+            <pre style={{ margin: '0.2rem 0 0 1rem', color: '#6b93ea' }}>
               {queryMode === 'visual'
                 ? JSON.stringify(generatedMongoQuery, null, 2)
                 : rawQueryText}
@@ -1256,19 +1256,19 @@ export const NestedQueryExplorerPage: React.FC = () => {
           {aiExplanation && (
             <div style={{
               padding: '0.85rem',
-              backgroundColor: '#f0fdf4',
-              border: '1px solid #bbf7d0',
+              backgroundColor: '#f0f8f4',
+              border: '1px solid #b9e2cf',
               borderRadius: 'var(--radius-md)',
               fontSize: '0.8rem'
             }}>
-              <strong style={{ color: '#166534', display: 'block', marginBottom: '0.25rem' }}>
+              <strong style={{ color: '#13623f', display: 'block', marginBottom: '0.25rem' }}>
                 Gemini Query Analysis & Indexing Advice:
               </strong>
-              <p style={{ margin: '0 0 0.5rem 0', color: '#15803d', lineHeight: 1.45 }}>
+              <p style={{ margin: '0 0 0.5rem 0', color: '#176b4a', lineHeight: 1.45 }}>
                 {aiExplanation.explanation}
               </p>
               {aiExplanation.index_recommendations.length > 0 && (
-                <div style={{ fontSize: '0.72rem', color: '#166534', borderTop: '1px solid #dcfce7', paddingTop: '0.35rem' }}>
+                <div style={{ fontSize: '0.72rem', color: '#13623f', borderTop: '1px solid #e7f5ee', paddingTop: '0.35rem' }}>
                   <strong>Recommended Index:</strong> <code>{aiExplanation.index_recommendations[0]}</code>
                 </div>
               )}
@@ -1344,7 +1344,7 @@ export const NestedQueryExplorerPage: React.FC = () => {
                         className="btn btn-secondary btn-sm"
                         style={{ fontSize: '0.72rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
                       >
-                        {copiedDocId === report.id ? <Check size={13} color="#10b981" /> : <Copy size={13} />}
+                        {copiedDocId === report.id ? <Check size={13} color="#22a06b" /> : <Copy size={13} />}
                         <span>{copiedDocId === report.id ? 'Copied' : 'Copy JSON'}</span>
                       </button>
 
@@ -1391,7 +1391,7 @@ export const NestedQueryExplorerPage: React.FC = () => {
 
                             {/* Sub-issues */}
                             {f.issues && f.issues.length > 0 && (
-                              <div style={{ marginTop: '0.35rem', paddingLeft: '0.75rem', borderLeft: '1.5px solid #cbd5e1', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                              <div style={{ marginTop: '0.35rem', paddingLeft: '0.75rem', borderLeft: '1.5px solid #c3c9d6', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                                 {f.issues.map((iss, iIdx) => (
                                   <div key={iIdx} style={{ fontSize: '0.72rem', color: 'var(--color-text-secondary)' }}>
                                     • Issue: <strong>{iss.title}</strong> (Status: <code>{iss.status}</code>{iss.code_reference ? `, Ref: ${iss.code_reference}` : ''})
@@ -1427,7 +1427,7 @@ export const NestedQueryExplorerPage: React.FC = () => {
         ) : hasExecuted ? (
           /* 13. ZERO-RESULT STATE */
           <div style={{ padding: '2.5rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.65rem' }}>
-            <div style={{ width: 48, height: 48, borderRadius: '50%', backgroundColor: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 48, height: 48, borderRadius: '50%', backgroundColor: '#fbf4e2', color: '#a9801e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <AlertTriangle size={24} />
             </div>
             <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: 'var(--color-text-primary)' }}>
