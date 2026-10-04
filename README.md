@@ -21,4 +21,4 @@ The app deploys automatically from this repository on every push to `main`. No e
 - [`vercel.json`](vercel.json) proxies `/api/*` to the API server on AWS EC2, so there is no CORS setup.
 - It also serves `index.html` for all other routes, so deep links like `/dashboard` work.
 
-If the API server's address changes, update the `/api` rewrite destination in `vercel.json` and push.
+If the API server's address changes, update the `/api` rewrite destination in `vercel.json` and push .
