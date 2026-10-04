@@ -99,6 +99,12 @@ code {
   overflow-wrap: anywhere;
 }
 
+[data-theme="dark"] code {
+  background-color: var(--navy-850);
+  color: var(--blue-300);
+  border-color: var(--color-border);
+}
+
 /* Identifiers in tables (e.g. RPT-2026-0001) stay on one line */
 .table td code {
   white-space: nowrap;

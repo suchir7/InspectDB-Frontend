@@ -150,7 +150,7 @@ export const KNOWN_FIELD_TYPE_MAP: Record<string, string> = {
 export const QUERY_PRESETS: QueryPreset[] = [
   {
     id: 'high-severity-findings',
-    name: '1. High Severity Findings',
+    name: 'High Severity Findings',
     description: 'Finds reports containing at least one nested finding with High severity.',
     complexity: 'Moderate',
     fields: ['findings.severity'],
@@ -163,7 +163,7 @@ export const QUERY_PRESETS: QueryPreset[] = [
   },
   {
     id: 'critical-findings',
-    name: '2. Critical Severity Findings',
+    name: 'Critical Severity Findings',
     description: 'Finds reports containing urgent Critical severity findings requiring immediate intervention.',
     complexity: 'Moderate',
     fields: ['findings.severity'],
@@ -176,7 +176,7 @@ export const QUERY_PRESETS: QueryPreset[] = [
   },
   {
     id: 'open-electrical-issues',
-    name: '3. Open Electrical Issues',
+    name: 'Open Electrical Issues',
     description: 'Finds reports in the Electrical category that contain unaddressed (open) issues.',
     complexity: 'Complex',
     fields: ['category', 'findings.issues.status'],
@@ -189,8 +189,22 @@ export const QUERY_PRESETS: QueryPreset[] = [
     ]
   },
   {
+    id: 'high-findings-with-open-issues',
+    name: 'High Findings with Open Issues ($elemMatch)',
+    description: 'Finds reports where the same finding is high severity and still has an open issue.',
+    complexity: 'Advanced',
+    fields: ['findings.severity', 'findings.issues.status'],
+    expected_path: 'findings[] { severity, issues[].status }',
+    explanation: 'Both conditions target the findings array, so they are wrapped in $elemMatch and must hold for one finding, not two different ones.',
+    match_type: 'and',
+    conditions: [
+      { field: 'findings.severity', operator: 'equals', value: 'high', value_type: 'categorical' },
+      { field: 'findings.issues.status', operator: 'equals', value: 'open', value_type: 'categorical' }
+    ]
+  },
+  {
     id: 'failed-safety-checks',
-    name: '4. Failed Safety Checks',
+    name: 'Failed Safety Checks',
     description: 'Finds inspection reports with overall status marked as failed.',
     complexity: 'Simple',
     fields: ['status'],
@@ -203,7 +217,7 @@ export const QUERY_PRESETS: QueryPreset[] = [
   },
   {
     id: 'building-a-reports',
-    name: '5. Building A Reports',
+    name: 'Building A Reports',
     description: 'Finds reports conducted in or around Building A facilities.',
     complexity: 'Simple',
     fields: ['location'],
@@ -216,7 +230,7 @@ export const QUERY_PRESETS: QueryPreset[] = [
   },
   {
     id: 'nested-electrical-telemetry',
-    name: '6. Reports with Nested Electrical Telemetry',
+    name: 'Reports with Nested Electrical Telemetry',
     description: 'Identifies documents containing the variable-schema electrical telemetry subdocument.',
     complexity: 'Moderate',
     fields: ['dynamic_attributes.electrical_telemetry'],
@@ -229,7 +243,7 @@ export const QUERY_PRESETS: QueryPreset[] = [
   },
   {
     id: 'heavy-equipment-reports',
-    name: '7. Heavy Equipment Reports',
+    name: 'Heavy Equipment Reports',
     description: 'Finds machinery and heavy equipment inspection audits.',
     complexity: 'Simple',
     fields: ['category'],
@@ -242,7 +256,7 @@ export const QUERY_PRESETS: QueryPreset[] = [
   },
   {
     id: 'high-temp-readings',
-    name: '8. High Temperature Readings (>50°C)',
+    name: 'High Temperature Readings (>50°C)',
     description: 'Finds reports where thermal imaging detected measured temperatures exceeding 50°C.',
     complexity: 'Complex',
     fields: ['findings.custom_metrics.measured_temp_c'],
@@ -255,12 +269,12 @@ export const QUERY_PRESETS: QueryPreset[] = [
   },
   {
     id: 'multiple-findings',
-    name: '9. Reports with Multiple Findings',
-    description: 'Finds reports containing more than 1 finding item in the array.',
+    name: 'Reports with Exactly Two Findings',
+    description: 'Finds reports whose findings array holds exactly two items.',
     complexity: 'Moderate',
     fields: ['findings'],
     expected_path: 'findings',
-    explanation: 'Evaluates array length to isolate multi-finding inspection reports.',
+    explanation: 'Uses $size, which matches an exact array length.',
     match_type: 'and',
     conditions: [
       { field: 'findings', operator: 'array_size', value: 2, value_type: 'array' }
@@ -268,7 +282,7 @@ export const QUERY_PRESETS: QueryPreset[] = [
   },
   {
     id: 'resolved-plus-open-issues',
-    name: '10. Reports with In-Progress / Open Issues',
+    name: 'Reports with Open or In-Progress Issues',
     description: 'Finds reports that have active issues matching open or in_progress states.',
     complexity: 'Moderate',
     fields: ['findings.issues.status'],
@@ -281,8 +295,8 @@ export const QUERY_PRESETS: QueryPreset[] = [
   },
   {
     id: 'deeply-nested-telemetry',
-    name: '11. Deeply Nested Telemetry (Phase A Voltage >= 13.8 kV)',
-    description: 'Traverses 5 levels of nested JSON objects inside electrical telemetry.',
+    name: 'Deeply Nested Telemetry (Phase A ≥ 13.8 kV)',
+    description: 'Follows a five-part dot-notation path into the electrical telemetry subdocument.',
     complexity: 'Advanced',
     fields: ['dynamic_attributes.electrical_telemetry.phases.phase_a.voltage_kv'],
     expected_path: 'dynamic_attributes.electrical_telemetry.phases.phase_a.voltage_kv',
@@ -294,7 +308,7 @@ export const QUERY_PRESETS: QueryPreset[] = [
   },
   {
     id: 'variable-schema-crane',
-    name: '12. Variable-Schema Crane Telemetry (Boom Angle > 40°)',
+    name: 'Variable-Schema Crane Telemetry (Boom Angle > 40°)',
     description: 'Finds crane inspections where boom operating angle exceeds 40 degrees.',
     complexity: 'Complex',
     fields: ['dynamic_attributes.crane_telemetry.boom_angle_degrees'],
@@ -322,6 +336,6 @@ export const EDUCATIONAL_DOCUMENTDB_POINTS = [
   },
   {
     title: 'High-Performance Multikey Indexing',
-    content: 'DocumentDB supports multikey indexes on array fields (e.g. db.inspection_reports.createIndex({"findings.severity": 1})) enabling sub-millisecond query evaluation on deeply nested finding arrays.'
+    content: 'DocumentDB supports multikey indexes on array fields (e.g. db.inspection_reports.createIndex({"findings.severity": 1})) so queries on nested findings can use an index instead of scanning every document.'
   }
 ];

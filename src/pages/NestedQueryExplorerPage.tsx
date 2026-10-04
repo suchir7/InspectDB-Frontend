@@ -1,52 +1,43 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  SearchCode,
-  Play,
-  Plus,
-  Trash2,
-  Sparkles,
-  Code,
-  Clock,
-  Layers,
-  CheckCircle,
-  Database,
-  ArrowRight,
-  Info,
-  HelpCircle,
-  FileJson,
-  CheckCircle2,
   AlertTriangle,
-  XCircle,
-  Copy,
-  Check,
-  RefreshCw,
-  FolderTree,
   Bookmark,
-  History,
-  Sliders,
-  Terminal,
-  ShieldCheck,
-  Compass,
+  Braces,
+  Check,
+  CheckCircle2,
   ChevronDown,
   ChevronUp,
-  Tag,
-  Flame,
-  Zap,
-  BookOpen
+  Copy,
+  FileJson,
+  FolderTree,
+  History,
+  Layers,
+  Play,
+  Plus,
+  RefreshCw,
+  RotateCcw,
+  SearchCode,
+  ShieldAlert,
+  ShieldCheck,
+  Sparkles,
+  Trash2,
+  X,
+  XCircle
 } from 'lucide-react';
 import { api } from '../services/api';
 import {
-  QueryCondition,
-  QueryRequest,
-  QueryResponse,
-  InspectionReport,
-  SchemaOverviewResponse,
-  RawQueryResponse,
+  CompatibilityReport,
   ExplainQueryResponse,
-  SavedQuery,
+  InspectionReport,
+  QueryCondition,
   QueryHistoryItem,
-  QueryPreset
+  QueryPreset,
+  QueryResponse,
+  RawQueryResponse,
+  SavedQuery,
+  SchemaFieldInfo,
+  SchemaOverviewResponse
 } from '../types';
 import { StatusBadge, SeverityBadge } from '../components/common/Badge';
 import { JsonViewer } from '../components/common/JsonViewer';
@@ -57,72 +48,239 @@ import {
   KNOWN_FIELD_TYPE_MAP,
   EDUCATIONAL_DOCUMENTDB_POINTS
 } from '../services/queryPresets';
+import { combine, conditionMatches, conditionsUnder, filterPaths, valuesAtPath } from '../services/nestedMatch';
+import '../styles/query-explorer.css';
+
+type QueryMode = 'visual' | 'raw';
+type LibraryTab = 'examples' | 'fields' | 'saved' | 'history';
+
+interface LastRun {
+  mode: QueryMode;
+  conditions: QueryCondition[];
+  matchType: string;
+  limit: number;
+}
+
+const DEFAULT_CONDITION: QueryCondition = { field: 'findings.severity', operator: 'equals', value: 'high', value_type: 'categorical' };
+const LIMITS = [10, 20, 50, 100];
+const LEVELS = ['Simple', 'Moderate', 'Complex', 'Advanced'];
+const MATCH_OPTIONS = [
+  { id: 'and', label: 'All' },
+  { id: 'or', label: 'Any' },
+  { id: 'not', label: 'None' }
+];
+const JOINER: Record<string, string> = { and: 'and', or: 'or', not: 'nor' };
+const ARRAY_PREFIXES = ['findings', 'findings.issues', 'custom_fields'];
+const RANGE_OPERATORS = ['greater_than', 'less_than', 'greater_than_or_equal', 'less_than_or_equal'];
+
+const HISTORY_KEY = 'inspectdb_query_history';
+const SAVED_KEY = 'inspectdb_saved_queries';
+
+const readStored = <T,>(key: string): T[] => {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(key) || '[]');
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+const writeStored = (key: string, value: unknown) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // Storage unavailable (private window); history simply isn't kept
+  }
+};
+
+/** Mirrors the server's filter builder so the preview matches what runs. */
+const conditionToMongo = (c: QueryCondition): Record<string, any> => {
+  const { field, operator } = c;
+  let val = c.value;
+  if (c.value_type === 'number' && val !== null && val !== undefined && val !== '') val = Number(val);
+  else if (c.value_type === 'boolean') val = String(val).toLowerCase() === 'true';
+  const list = () => (Array.isArray(val) ? val : String(val).split(',').map(s => s.trim()).filter(Boolean));
+
+  switch (operator) {
+    case 'equals': return { [field]: val };
+    case 'not_equals': return { [field]: { $ne: val } };
+    case 'greater_than': return { [field]: { $gt: val } };
+    case 'greater_than_or_equal': return { [field]: { $gte: val } };
+    case 'less_than': return { [field]: { $lt: val } };
+    case 'less_than_or_equal': return { [field]: { $lte: val } };
+    case 'contains': return { [field]: { $regex: String(val), $options: 'i' } };
+    case 'starts_with': return { [field]: { $regex: `^${String(val)}`, $options: 'i' } };
+    case 'ends_with': return { [field]: { $regex: `${String(val)}$`, $options: 'i' } };
+    case 'in': return { [field]: { $in: list() } };
+    case 'not_in': return { [field]: { $nin: list() } };
+    case 'exists': return { [field]: { $exists: Boolean(val) } };
+    case 'is_true': return { [field]: true };
+    case 'is_false': return { [field]: false };
+    case 'array_size': return { [field]: { $size: Number(val) || 1 } };
+    default: return { [field]: val };
+  }
+};
+
+const buildFilter = (conditions: QueryCondition[], matchType: string): Record<string, any> => {
+  if (conditions.length === 0) return {};
+  const grouped: Record<string, QueryCondition[]> = {};
+  const plain: QueryCondition[] = [];
+
+  if (matchType === 'and') {
+    for (const cond of conditions) {
+      const prefix = ARRAY_PREFIXES.find(p => cond.field.startsWith(`${p}.`));
+      if (prefix) (grouped[prefix] ||= []).push({ ...cond, field: cond.field.slice(prefix.length + 1) });
+      else plain.push(cond);
+    }
+  } else {
+    plain.push(...conditions);
+  }
+
+  const parts: Record<string, any>[] = [];
+  for (const [prefix, subs] of Object.entries(grouped)) {
+    if (subs.length > 1) {
+      // Several conditions on one array must hold for the same element
+      parts.push({ [prefix]: { $elemMatch: Object.assign({}, ...subs.map(conditionToMongo)) } });
+    } else {
+      parts.push(conditionToMongo({ ...subs[0], field: `${prefix}.${subs[0].field}` }));
+    }
+  }
+  parts.push(...plain.map(conditionToMongo));
+
+  if (parts.length === 0) return {};
+  if (matchType === 'or') return { $or: parts };
+  if (matchType === 'not') return { $nor: parts };
+  return parts.length > 1 ? { $and: parts } : parts[0];
+};
+
+const validateQuery = (mode: QueryMode, conditions: QueryCondition[], rawText: string) => {
+  if (mode === 'visual') {
+    if (conditions.length === 0) return { isValid: false, message: 'Add at least one condition.' };
+    for (const c of conditions) {
+      if (!c.field.trim()) return { isValid: false, message: 'Every condition needs a field path.' };
+      const type = KNOWN_FIELD_TYPE_MAP[c.field] || c.value_type;
+      if (type === 'categorical' && RANGE_OPERATORS.includes(c.operator)) {
+        return { isValid: false, message: `${c.field} holds fixed values; use Equals or In list instead of a range.` };
+      }
+    }
+    return { isValid: true, message: 'Ready to run' };
+  }
+  try {
+    const parsed = JSON.parse(rawText);
+    if (typeof parsed !== 'object' || Array.isArray(parsed) || parsed === null) {
+      return { isValid: false, message: 'The filter must be a JSON object.' };
+    }
+    return { isValid: true, message: 'Valid JSON filter' };
+  } catch (err: any) {
+    return { isValid: false, message: `JSON error: ${err.message}` };
+  }
+};
+
+const TOKEN = /("(?:\\.|[^"\\])*")(\s*:)?|(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)|\b(true|false|null)\b|([{}[\],])/g;
+
+/** Light syntax colouring for a pretty-printed JSON filter. */
+const highlightJson = (text: string): React.ReactNode[] => {
+  const out: React.ReactNode[] = [];
+  let last = 0;
+  let i = 0;
+  for (const m of text.matchAll(TOKEN)) {
+    const at = m.index ?? 0;
+    if (at > last) out.push(text.slice(last, at));
+    const [whole, str, colon, num, lit, punc] = m;
+    if (str && colon) {
+      out.push(<span key={i++} className={str.startsWith('"$') ? 't-op' : 't-key'}>{str}</span>, <span key={i++} className="t-punc">{colon}</span>);
+    } else if (str) out.push(<span key={i++} className="t-str">{str}</span>);
+    else if (num || lit) out.push(<span key={i++} className="t-num">{num || lit}</span>);
+    else if (punc) out.push(<span key={i++} className="t-punc">{punc}</span>);
+    else out.push(whole);
+    last = at + whole.length;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return out;
+};
+
+/** Array fields whose conditions were grouped under $elemMatch. */
+const elemMatchFields = (node: unknown, prefix = ''): string[] => {
+  if (Array.isArray(node)) return node.flatMap(n => elemMatchFields(n, prefix));
+  if (node === null || typeof node !== 'object') return [];
+  return Object.entries(node as Record<string, unknown>).flatMap(([key, value]) => {
+    if (key.startsWith('$')) return elemMatchFields(value, prefix);
+    const path = prefix ? `${prefix}.${key}` : key;
+    const own = value && typeof value === 'object' && '$elemMatch' in (value as object) ? [path] : [];
+    return [...own, ...elemMatchFields(value, path)];
+  });
+};
+
+const formatValue = (v: unknown) => {
+  const s = typeof v === 'string' ? v : JSON.stringify(v);
+  return s.length > 40 ? `${s.slice(0, 39)}…` : s;
+};
+
+const ComplexityMeter: React.FC<{ level: string }> = ({ level }) => {
+  const rank = LEVELS.indexOf(level) + 1;
+  return (
+    <span className="nq-level" title={`${level} query`}>
+      <span className="nq-level-bars" aria-hidden="true">
+        {LEVELS.map((l, i) => <span key={l} className={i < rank ? 'is-on' : undefined} />)}
+      </span>
+      {level}
+    </span>
+  );
+};
 
 export const NestedQueryExplorerPage: React.FC = () => {
   const store = useDocumentStore();
-  // Query Builder State
-  const [queryMode, setQueryMode] = useState<'visual' | 'raw'>('visual');
-  const [matchType, setMatchType] = useState<'and' | 'or' | 'not'>('and');
-  const [conditions, setConditions] = useState<QueryCondition[]>([
-    { field: 'findings.severity', operator: 'equals', value: 'high', value_type: 'categorical' }
-  ]);
-  const [rawQueryText, setRawQueryText] = useState<string>(
-    JSON.stringify({ "findings.severity": "high" }, null, 2)
-  );
-  const [limit, setLimit] = useState<number>(20);
 
-  // Schema & Statistics State
-  const [schemaOverview, setSchemaOverview] = useState<SchemaOverviewResponse | null>(null);
-  const [loadingSchema, setLoadingSchema] = useState<boolean>(false);
-  const [showSchemaTree, setShowSchemaTree] = useState<boolean>(false);
-  const [selectedFieldFilter, setSelectedFieldFilter] = useState<string>('');
+  // Query being edited
+  const [queryMode, setQueryMode] = useState<QueryMode>('visual');
+  const [matchType, setMatchType] = useState<string>('and');
+  const [conditions, setConditions] = useState<QueryCondition[]>([DEFAULT_CONDITION]);
+  const [rawQueryText, setRawQueryText] = useState(JSON.stringify({ 'findings.severity': 'high' }, null, 2));
+  const [limit, setLimit] = useState(20);
 
-  // Results & Execution State
-  const [executing, setExecuting] = useState<boolean>(false);
+  // Schema discovered from the user's documents
+  const [schema, setSchema] = useState<SchemaOverviewResponse | null>(null);
+  const [schemaState, setSchemaState] = useState<'loading' | 'ready' | 'error'>('loading');
+
+  // Last execution
+  const [executing, setExecuting] = useState(false);
   const [queryResponse, setQueryResponse] = useState<QueryResponse | null>(null);
   const [rawResponse, setRawResponse] = useState<RawQueryResponse | null>(null);
-  const [errorBanner, setErrorBanner] = useState<string | null>(null);
-  const [successBanner, setSuccessBanner] = useState<string | null>(null);
+  const [lastRun, setLastRun] = useState<LastRun | null>(null);
+  const [runError, setRunError] = useState<string | null>(null);
 
-  // Gemini AI Explanation State
-  const [explainingAi, setExplainingAi] = useState<boolean>(false);
+  // DocumentDB compatibility of the current filter
+  const [compat, setCompat] = useState<CompatibilityReport | null>(null);
+  const [compatState, setCompatState] = useState<'idle' | 'checking' | 'error'>('idle');
+
+  // Gemini explanation
+  const [explaining, setExplaining] = useState(false);
   const [aiExplanation, setAiExplanation] = useState<ExplainQueryResponse | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
 
-  // Local History & Saved Queries State
-  const [queryHistory, setQueryHistory] = useState<QueryHistoryItem[]>(() => {
-    try {
-      const saved = localStorage.getItem('inspectdb_query_history');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
-  const [savedQueries, setSavedQueries] = useState<SavedQuery[]>(() => {
-    try {
-      const saved = localStorage.getItem('inspectdb_saved_queries');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  // Library
+  const [history, setHistory] = useState<QueryHistoryItem[]>(() => readStored<QueryHistoryItem>(HISTORY_KEY));
+  const [saved, setSaved] = useState<SavedQuery[]>(() => readStored<SavedQuery>(SAVED_KEY));
+  const [libraryTab, setLibraryTab] = useState<LibraryTab>('examples');
+  const [fieldFilter, setFieldFilter] = useState('');
+  const [activePresetId, setActivePresetId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveName, setSaveName] = useState('');
 
-  // UI Expand / Copy State
-  const [copiedQuery, setCopiedQuery] = useState<boolean>(false);
-  const [copiedDocId, setCopiedDocId] = useState<string | null>(null);
-  const [expandedDocs, setExpandedDocs] = useState<Record<string, boolean>>({});
-  const [viewJsonDocs, setViewJsonDocs] = useState<Record<string, boolean>>({});
-  const [activeTab, setActiveTab] = useState<'presets' | 'saved' | 'history' | 'education'>('presets');
+  // Result display
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [jsonView, setJsonView] = useState<Record<string, boolean>>({});
+  const [copied, setCopied] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimer = useRef<number | undefined>(undefined);
 
-  // Load Schema on mount
   const fetchSchema = useCallback(async () => {
-    setLoadingSchema(true);
+    setSchemaState('loading');
     try {
-      const res = await api.getDocumentSchema();
-      setSchemaOverview(res);
-    } catch (err: any) {
-      console.error('Failed to load schema overview:', err);
-    } finally {
-      setLoadingSchema(false);
+      setSchema(await api.getDocumentSchema());
+      setSchemaState('ready');
+    } catch {
+      setSchemaState('error');
     }
   }, []);
 
@@ -130,1343 +288,974 @@ export const NestedQueryExplorerPage: React.FC = () => {
     fetchSchema();
   }, [fetchSchema]);
 
-  // Persist history & saved queries
-  useEffect(() => {
+  useEffect(() => writeStored(HISTORY_KEY, history.slice(0, 20)), [history]);
+  useEffect(() => writeStored(SAVED_KEY, saved), [saved]);
+  useEffect(() => () => window.clearTimeout(toastTimer.current), []);
+
+  const showToast = (message: string) => {
+    setToast(message);
+    window.clearTimeout(toastTimer.current);
+    toastTimer.current = window.setTimeout(() => setToast(null), 2600);
+  };
+
+  const copyText = async (key: string, text: string) => {
     try {
-      localStorage.setItem('inspectdb_query_history', JSON.stringify(queryHistory.slice(0, 20)));
-    } catch (e) {
-      console.error(e);
+      await navigator.clipboard.writeText(text);
+      setCopied(key);
+      window.setTimeout(() => setCopied(c => (c === key ? null : c)), 1800);
+    } catch {
+      showToast('Copy is blocked in this browser.');
     }
-  }, [queryHistory]);
+  };
 
+  const generatedFilter = useMemo(() => buildFilter(conditions, matchType), [conditions, matchType]);
+
+  // The JSON editor starts from whatever the visual builder produced
   useEffect(() => {
+    if (queryMode === 'visual') setRawQueryText(JSON.stringify(generatedFilter, null, 2));
+  }, [generatedFilter, queryMode]);
+
+  const parsedRaw = useMemo<Record<string, any> | null>(() => {
     try {
-      localStorage.setItem('inspectdb_saved_queries', JSON.stringify(savedQueries));
-    } catch (e) {
-      console.error(e);
+      const v = JSON.parse(rawQueryText);
+      return v && typeof v === 'object' && !Array.isArray(v) ? v : null;
+    } catch {
+      return null;
     }
-  }, [savedQueries]);
+  }, [rawQueryText]);
 
-  // Build generated MongoDB query preview
-  const generatedMongoQuery = useMemo(() => {
-    if (!conditions || conditions.length === 0) return {};
+  const activeFilter = useMemo(() => (queryMode === 'visual' ? generatedFilter : parsedRaw), [queryMode, generatedFilter, parsedRaw]);
+  const activeFilterKey = activeFilter ? JSON.stringify(activeFilter) : '';
+  const validation = useMemo(() => validateQuery(queryMode, conditions, rawQueryText), [queryMode, conditions, rawQueryText]);
 
-    // Check for array prefixes to group into $elemMatch if match_type is 'and'
-    const arrayPrefixes = ["findings", "findings.issues", "custom_fields"];
-    const groupedByPrefix: Record<string, QueryCondition[]> = {};
-    const nonGrouped: QueryCondition[] = [];
+  const schemaByPath = useMemo(() => {
+    const map: Record<string, SchemaFieldInfo> = {};
+    schema?.fields.forEach(f => { map[f.path] = f; });
+    return map;
+  }, [schema]);
 
-    if (matchType === "and") {
-      for (const cond of conditions) {
-        let placed = false;
-        for (const prefix of arrayPrefixes) {
-          if (cond.field.startsWith(`${prefix}.`)) {
-            const subField = cond.field.substring(prefix.length + 1);
-            if (!groupedByPrefix[prefix]) groupedByPrefix[prefix] = [];
-            groupedByPrefix[prefix].push({ ...cond, field: subField });
-            placed = true;
-            break;
-          }
-        }
-        if (!placed) nonGrouped.push(cond);
-      }
-    } else {
-      nonGrouped.push(...conditions);
-    }
+  const fieldSuggestions = useMemo(
+    () => Array.from(new Set([...(schema?.fields.map(f => f.path) ?? []), ...Object.keys(KNOWN_FIELD_TYPE_MAP)])).sort(),
+    [schema]
+  );
 
-    const mongoParts: Record<string, any>[] = [];
+  const inferType = useCallback((path: string): string => {
+    const known = KNOWN_FIELD_TYPE_MAP[path];
+    if (known) return known;
+    const discovered = schemaByPath[path]?.field_type;
+    return discovered && FIELD_TYPE_OPERATORS[discovered] ? discovered : 'string';
+  }, [schemaByPath]);
 
-    const conditionToMongo = (c: QueryCondition) => {
-      const { field, operator, value, value_type } = c;
-      let val = value;
-      if (value_type === 'number' && val !== null && val !== undefined) {
-        val = Number(val);
-      } else if (value_type === 'boolean') {
-        val = String(val).toLowerCase() === 'true';
-      }
-
-      if (operator === 'equals') return { [field]: val };
-      if (operator === 'not_equals') return { [field]: { $ne: val } };
-      if (operator === 'greater_than') return { [field]: { $gt: val } };
-      if (operator === 'greater_than_or_equal') return { [field]: { $gte: val } };
-      if (operator === 'less_than') return { [field]: { $lt: val } };
-      if (operator === 'less_than_or_equal') return { [field]: { $lte: val } };
-      if (operator === 'contains') return { [field]: { $regex: String(val), $options: 'i' } };
-      if (operator === 'starts_with') return { [field]: { $regex: `^${String(val)}`, $options: 'i' } };
-      if (operator === 'ends_with') return { [field]: { $regex: `${String(val)}$`, $options: 'i' } };
-      if (operator === 'in') {
-        const items = Array.isArray(val) ? val : String(val).split(',').map(s => s.trim()).filter(Boolean);
-        return { [field]: { $in: items } };
-      }
-      if (operator === 'not_in') {
-        const items = Array.isArray(val) ? val : String(val).split(',').map(s => s.trim()).filter(Boolean);
-        return { [field]: { $nin: items } };
-      }
-      if (operator === 'exists') return { [field]: { $exists: Boolean(val) } };
-      if (operator === 'is_true') return { [field]: true };
-      if (operator === 'is_false') return { [field]: false };
-      if (operator === 'array_size') return { [field]: { $size: Number(val) || 1 } };
-      return { [field]: val };
-    };
-
-    for (const [prefix, subConds] of Object.entries(groupedByPrefix)) {
-      if (subConds.length > 1) {
-        const elemObj: Record<string, any> = {};
-        for (const sc of subConds) {
-          Object.assign(elemObj, conditionToMongo(sc));
-        }
-        mongoParts.push({ [prefix]: { $elemMatch: elemObj } });
-      } else {
-        const origField = `${prefix}.${subConds[0].field}`;
-        mongoParts.push(conditionToMongo({ ...subConds[0], field: origField }));
-      }
-    }
-
-    for (const ng of nonGrouped) {
-      mongoParts.push(conditionToMongo(ng));
-    }
-
-    if (mongoParts.length === 0) return {};
-    if (matchType === 'or') return { $or: mongoParts };
-    if (matchType === 'not') return { $nor: mongoParts };
-    return mongoParts.length > 1 ? { $and: mongoParts } : mongoParts[0];
-  }, [conditions, matchType]);
-
-  // Synchronize raw query editor when in visual mode
+  // Check the filter against DocumentDB's supported features as it changes
   useEffect(() => {
-    if (queryMode === 'visual') {
-      setRawQueryText(JSON.stringify(generatedMongoQuery, null, 2));
-    }
-  }, [generatedMongoQuery, queryMode]);
-
-  // Real-time Query Validation
-  const queryValidation = useMemo(() => {
-    if (queryMode === 'visual') {
-      for (const c of conditions) {
-        if (!c.field.trim()) return { isValid: false, message: 'Please specify a field path for all conditions.' };
-        // Check categorical operator mismatches
-        const inferredType = KNOWN_FIELD_TYPE_MAP[c.field] || c.value_type;
-        if (inferredType === 'categorical' && ['greater_than', 'less_than', 'greater_than_or_equal', 'less_than_or_equal'].includes(c.operator)) {
-          return {
-            isValid: false,
-            message: `Operator '${c.operator}' is not valid for categorical enum field '${c.field}'. Use Equals or In List.`
-          };
-        }
-      }
-      return { isValid: true, message: 'Valid DocumentDB Query Structure' };
-    } else {
-      try {
-        const parsed = JSON.parse(rawQueryText);
-        if (typeof parsed !== 'object' || Array.isArray(parsed) || parsed === null) {
-          return { isValid: false, message: 'Raw query must be a JSON object.' };
-        }
-        return { isValid: true, message: 'Valid JSON MongoDB Query Syntax' };
-      } catch (err: any) {
-        return { isValid: false, message: `JSON Syntax Error: ${err.message}` };
-      }
-    }
-  }, [queryMode, conditions, rawQueryText]);
-
-  // Execute Visual or Raw Query
-  const handleExecuteQuery = async () => {
-    if (!queryValidation.isValid) {
-      setErrorBanner(queryValidation.message);
+    if (!activeFilterKey) {
+      setCompat(null);
+      setCompatState('idle');
       return;
     }
-
-    setExecuting(true);
-    setErrorBanner(null);
-    setAiExplanation(null);
-
-    try {
-      if (queryMode === 'visual') {
-        const req: QueryRequest = {
-          match_type: matchType,
-          conditions,
-          limit
-        };
-        const res = await api.executeNestedQuery(req);
-        setQueryResponse(res);
-        setRawResponse(null);
-
-        // Record history
-        const histItem: QueryHistoryItem = {
-          id: `hist-${Date.now()}`,
-          name: `${matchType.toUpperCase()} (${conditions.map(c => c.field).join(', ')})`,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-          query: res.mongo_equivalent_query,
-          total_matches: res.total_matches,
-          execution_time_ms: res.execution_time_ms,
-          conditions: [...conditions],
-          match_type: matchType
-        };
-        setQueryHistory(prev => [histItem, ...prev.slice(0, 19)]);
-      } else {
-        const parsed = JSON.parse(rawQueryText);
-        const res = await api.executeRawQuery({ query: parsed, limit });
-        setRawResponse(res);
-        setQueryResponse(null);
-
-        // Record history
-        const histItem: QueryHistoryItem = {
-          id: `hist-${Date.now()}`,
-          name: `Raw: ${Object.keys(parsed).join(', ') || 'Find All'}`,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-          query: parsed,
-          total_matches: res.total_matches,
-          execution_time_ms: res.execution_time_ms
-        };
-        setQueryHistory(prev => [histItem, ...prev.slice(0, 19)]);
+    let cancelled = false;
+    setCompatState('checking');
+    const timer = window.setTimeout(async () => {
+      try {
+        const report = await api.checkQueryCompatibility({ query: JSON.parse(activeFilterKey) });
+        if (!cancelled) {
+          setCompat(report as CompatibilityReport);
+          setCompatState('idle');
+        }
+      } catch {
+        if (!cancelled) setCompatState('error');
       }
+    }, 450);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [activeFilterKey]);
+
+  // Gemini output belongs to the filter it explained
+  useEffect(() => {
+    setAiExplanation(null);
+    setAiError(null);
+  }, [activeFilterKey]);
+
+  const timestamp = () => new Date().toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+  const runVisual = async (conds: QueryCondition[], match: string, lim = limit) => {
+    const check = validateQuery('visual', conds, '');
+    if (!check.isValid) {
+      setRunError(check.message);
+      return;
+    }
+    setExecuting(true);
+    setRunError(null);
+    try {
+      const res = await api.executeNestedQuery({ match_type: match, conditions: conds, limit: lim });
+      setQueryResponse(res);
+      setRawResponse(null);
+      setLastRun({ mode: 'visual', conditions: conds, matchType: match, limit: lim });
+      setExpanded({});
+      setJsonView({});
+      setHistory(prev => [{
+        id: `hist-${Date.now()}`,
+        name: conds.map(c => c.field).join(` ${JOINER[match] ?? 'and'} `),
+        timestamp: timestamp(),
+        query: res.mongo_equivalent_query,
+        total_matches: res.total_matches,
+        execution_time_ms: res.execution_time_ms,
+        conditions: conds,
+        match_type: match
+      }, ...prev.slice(0, 19)]);
     } catch (err: any) {
-      console.error('Query execution error:', err);
-      setErrorBanner(err.message || 'Failed to execute query on local repository.');
+      setRunError(err.message || 'The query could not be run.');
     } finally {
       setExecuting(false);
     }
   };
 
-  // Explain with Gemini AI
-  const handleExplainWithGemini = async () => {
-    setExplainingAi(true);
-    setErrorBanner(null);
+  const runRaw = async (text: string, lim = limit) => {
+    const check = validateQuery('raw', [], text);
+    if (!check.isValid) {
+      setRunError(check.message);
+      return;
+    }
+    const parsed = JSON.parse(text);
+    setExecuting(true);
+    setRunError(null);
     try {
-      const activeQuery = queryMode === 'visual' ? generatedMongoQuery : JSON.parse(rawQueryText);
-      const res = await api.explainQuery({ query: activeQuery });
-      setAiExplanation(res);
-      setSuccessBanner('Gemini analyzed query mechanics and DocumentDB index considerations.');
-      setTimeout(() => setSuccessBanner(null), 4000);
+      const res = await api.executeRawQuery({ query: parsed, limit: lim });
+      setRawResponse(res);
+      setQueryResponse(null);
+      setLastRun({ mode: 'raw', conditions: [], matchType: 'and', limit: lim });
+      setExpanded({});
+      setJsonView({});
+      setHistory(prev => [{
+        id: `hist-${Date.now()}`,
+        name: Object.keys(parsed).join(', ') || 'All documents',
+        timestamp: timestamp(),
+        query: parsed,
+        total_matches: res.total_matches,
+        execution_time_ms: res.execution_time_ms
+      }, ...prev.slice(0, 19)]);
     } catch (err: any) {
-      setErrorBanner(err.message || 'Failed to generate AI query explanation.');
+      setRunError(err.message || 'The query could not be run.');
     } finally {
-      setExplainingAi(false);
+      setExecuting(false);
     }
   };
 
-  // Apply Preset
-  const handleSelectPreset = (preset: QueryPreset) => {
+  const handleRun = (lim = limit) => (queryMode === 'visual' ? runVisual(conditions, matchType, lim) : runRaw(rawQueryText, lim));
+
+  const loadVisual = (conds: QueryCondition[], match: string) => {
     setQueryMode('visual');
-    setMatchType(preset.match_type);
-    setConditions(preset.conditions);
-    setQueryResponse(null);
-    setRawResponse(null);
-    setAiExplanation(null);
-    setSuccessBanner(`Loaded preset: '${preset.name}'. Click "Execute Query" to run.`);
-    setTimeout(() => setSuccessBanner(null), 3000);
+    setMatchType(match);
+    setConditions(conds);
   };
 
-  // Condition Handlers
-  const handleAddCondition = (fieldPath: string = 'findings.severity') => {
-    const inferredType = KNOWN_FIELD_TYPE_MAP[fieldPath] || 'string';
-    const opDef = FIELD_TYPE_OPERATORS[inferredType] || FIELD_TYPE_OPERATORS.string;
-    setConditions(prev => [
-      ...prev,
-      { field: fieldPath, operator: opDef.defaultOperator, value: '', value_type: inferredType }
-    ]);
+  const handleSelectPreset = (preset: QueryPreset) => {
+    setActivePresetId(preset.id);
+    loadVisual(preset.conditions, preset.match_type);
+    runVisual(preset.conditions, preset.match_type);
+  };
+
+  const handleRunStored = (item: { conditions?: QueryCondition[]; match_type?: string; query: Record<string, any> }) => {
+    setActivePresetId(null);
+    if (item.conditions && item.conditions.length > 0) {
+      const match = item.match_type || 'and';
+      loadVisual(item.conditions, match);
+      runVisual(item.conditions, match);
+    } else {
+      const text = JSON.stringify(item.query, null, 2);
+      setQueryMode('raw');
+      setRawQueryText(text);
+      runRaw(text);
+    }
+  };
+
+  const handleAddCondition = (fieldPath = '') => {
+    const type = fieldPath ? inferType(fieldPath) : 'string';
+    const op = (FIELD_TYPE_OPERATORS[type] || FIELD_TYPE_OPERATORS.string).defaultOperator;
+    const next: QueryCondition = { field: fieldPath, operator: op, value: op === 'exists' ? true : '', value_type: type };
+    setQueryMode('visual');
+    setActivePresetId(null);
+    // Replace a single untouched blank row instead of stacking another
+    setConditions(prev => (prev.length === 1 && !prev[0].field.trim() ? [next] : [...prev, next]));
   };
 
   const handleUpdateCondition = (index: number, updates: Partial<QueryCondition>) => {
-    setConditions(prev => {
-      const next = [...prev];
-      const current = { ...next[index], ...updates };
-
-      // If field changed, re-infer type and default operator
-      if (updates.field && updates.field !== prev[index].field) {
-        const inferredType = KNOWN_FIELD_TYPE_MAP[updates.field] || current.value_type || 'string';
-        const opDef = FIELD_TYPE_OPERATORS[inferredType] || FIELD_TYPE_OPERATORS.string;
-        current.value_type = inferredType;
-        current.operator = opDef.defaultOperator;
+    setActivePresetId(null);
+    setConditions(prev => prev.map((cond, i) => {
+      if (i !== index) return cond;
+      const next = { ...cond, ...updates };
+      if (updates.field !== undefined && updates.field !== cond.field) {
+        const type = inferType(updates.field);
+        const op = (FIELD_TYPE_OPERATORS[type] || FIELD_TYPE_OPERATORS.string).defaultOperator;
+        next.value_type = type;
+        if (!(FIELD_TYPE_OPERATORS[type] || FIELD_TYPE_OPERATORS.string).allowedOperators.some(o => o.id === next.operator)) {
+          next.operator = op;
+        }
       }
-
-      next[index] = current;
+      if (updates.operator === 'exists' && cond.operator !== 'exists') next.value = true;
       return next;
-    });
+    }));
   };
 
   const handleRemoveCondition = (index: number) => {
+    setActivePresetId(null);
     setConditions(prev => prev.filter((_, i) => i !== index));
   };
 
-  // Save Query
-  const handleSaveCurrentQuery = () => {
-    const name = window.prompt('Enter a name for this saved query:', `Query on ${conditions.map(c => c.field).join(', ')}`);
-    if (!name) return;
-    const desc = window.prompt('Enter an optional description:', 'Saved for project demonstration');
+  const handleReset = () => {
+    setActivePresetId(null);
+    setQueryMode('visual');
+    setMatchType('and');
+    setConditions([DEFAULT_CONDITION]);
+    setRunError(null);
+  };
 
-    const item: SavedQuery = {
+  const startSave = () => {
+    const fields = queryMode === 'visual' ? conditions.map(c => c.field).filter(Boolean).join(', ') : Object.keys(parsedRaw ?? {}).join(', ');
+    setSaveName(fields ? `Query on ${fields}` : 'Saved query');
+    setSaving(true);
+  };
+
+  const confirmSave = () => {
+    const name = saveName.trim();
+    if (!name || !activeFilter) return;
+    setSaved(prev => [{
       id: `saved-${Date.now()}`,
-      name: name.trim(),
-      description: desc ? desc.trim() : '',
-      query: queryMode === 'visual' ? generatedMongoQuery : JSON.parse(rawQueryText),
+      name,
+      description: '',
+      query: activeFilter,
       created_at: new Date().toLocaleDateString(),
-      conditions: queryMode === 'visual' ? [...conditions] : undefined,
+      conditions: queryMode === 'visual' ? conditions : undefined,
       match_type: queryMode === 'visual' ? matchType : undefined
-    };
-    setSavedQueries(prev => [item, ...prev]);
-    setSuccessBanner(`Saved query '${name}'.`);
-    setTimeout(() => setSuccessBanner(null), 3000);
+    }, ...prev]);
+    setSaving(false);
+    showToast(`Saved “${name}”`);
   };
 
-  const handleLoadSavedQuery = (item: SavedQuery) => {
-    if (item.conditions) {
-      setQueryMode('visual');
-      setConditions(item.conditions);
-      if (item.match_type) setMatchType(item.match_type as any);
-    } else {
-      setQueryMode('raw');
-      setRawQueryText(JSON.stringify(item.query, null, 2));
+  const handleExplain = async () => {
+    if (!activeFilter) return;
+    setExplaining(true);
+    setAiError(null);
+    try {
+      setAiExplanation(await api.explainQuery({ query: activeFilter }));
+    } catch (err: any) {
+      setAiError(err.message || 'The explanation could not be generated.');
+    } finally {
+      setExplaining(false);
     }
-    setSuccessBanner(`Loaded saved query '${item.name}'.`);
-    setTimeout(() => setSuccessBanner(null), 3000);
   };
 
-  const handleDeleteSavedQuery = (id: string) => {
-    setSavedQueries(prev => prev.filter(q => q.id !== id));
+  const applyRewrite = (query: Record<string, any>) => {
+    setActivePresetId(null);
+    setQueryMode('raw');
+    setRawQueryText(JSON.stringify(query, null, 2));
+    showToast('Loaded the DocumentDB-compatible rewrite into the JSON editor.');
   };
 
-  // Copy Query helper
-  const handleCopyQuery = () => {
-    const textToCopy = queryMode === 'visual'
-      ? `db.inspection_reports.find(${JSON.stringify(generatedMongoQuery, null, 2)})`
-      : `db.inspection_reports.find(${rawQueryText})`;
-    navigator.clipboard.writeText(textToCopy);
-    setCopiedQuery(true);
-    setTimeout(() => setCopiedQuery(false), 2000);
-  };
+  // Results
+  const matches: InspectionReport[] = queryResponse?.matched_reports ?? rawResponse?.matched_reports ?? [];
+  const matchCount = queryResponse?.total_matches ?? rawResponse?.total_matches ?? 0;
+  const execMs = queryResponse?.execution_time_ms ?? rawResponse?.execution_time_ms ?? 0;
+  const hasRun = lastRun !== null;
+  const atLimit = hasRun && matchCount >= (lastRun?.limit ?? limit);
 
-  const handleCopyDocJson = (report: InspectionReport) => {
-    navigator.clipboard.writeText(JSON.stringify(report, null, 2));
-    setCopiedDocId(report.id);
-    setTimeout(() => setCopiedDocId(null), 2000);
-  };
+  // Facts about the current filter
+  const leafPaths = useMemo(() => {
+    const all = Array.from(new Set(filterPaths(activeFilter ?? {})));
+    return all.filter(p => !all.some(other => other.startsWith(`${p}.`)));
+  }, [activeFilter]);
+  const depth = leafPaths.reduce((max, p) => Math.max(max, p.split('.').length), 0);
+  const elemFields = useMemo(() => Array.from(new Set(elemMatchFields(activeFilter ?? {}))), [activeFilter]);
 
-  // Active matched reports list
-  const activeMatches: InspectionReport[] = useMemo(() => {
-    if (queryResponse) return queryResponse.matched_reports;
-    if (rawResponse) return rawResponse.matched_reports;
-    return [];
-  }, [queryResponse, rawResponse]);
+  const explanation = useMemo(() => {
+    const lines: string[] = [];
+    const root = activeFilter ?? {};
+    if (elemFields.length > 0) {
+      lines.push(`Conditions on ${elemFields.join(', ')} are wrapped in $elemMatch, so they must all hold for the same array element rather than being spread across different ones.`);
+    }
+    const arrayPaths = leafPaths.filter(p => p.startsWith('findings.') && !elemFields.some(f => p.startsWith(`${f}.`)));
+    if (arrayPaths.length > 0) {
+      lines.push(`${arrayPaths.join(', ')} ${arrayPaths.length === 1 ? 'sits' : 'sit'} inside the findings array; dot notation matches a report when any element satisfies the condition.`);
+    }
+    if (leafPaths.some(p => p.startsWith('dynamic_attributes.'))) {
+      lines.push('dynamic_attributes fields exist only on some report types. Reports without them simply do not match, with no schema change needed.');
+    }
+    if ('$or' in root) lines.push('A report matches when any condition holds ($or).');
+    if ('$nor' in root) lines.push('A report matches only when none of the conditions hold ($nor).');
+    if (leafPaths.length === 0) lines.push('An empty filter returns every report you own.');
+    lines.push('The server also adds your user ID to the filter, so you only ever see your own reports.');
+    return lines;
+  }, [activeFilter, elemFields, leafPaths]);
 
-  const activeExecutionTime = queryResponse?.execution_time_ms ?? rawResponse?.execution_time_ms ?? 0;
-  const activeMatchesCount = queryResponse?.total_matches ?? rawResponse?.total_matches ?? 0;
-  const hasExecuted = queryResponse !== null || rawResponse !== null;
+  const filteredFields = useMemo(() => {
+    if (!schema) return [];
+    const q = fieldFilter.trim().toLowerCase();
+    if (!q) return schema.fields;
+    return schema.fields.filter(f => f.path.toLowerCase().includes(q) || f.field_type.toLowerCase().includes(q));
+  }, [schema, fieldFilter]);
 
-  // Filtered schema tree items
-  const filteredSchemaFields = useMemo(() => {
-    if (!schemaOverview) return [];
-    if (!selectedFieldFilter.trim()) return schemaOverview.fields;
-    const q = selectedFieldFilter.toLowerCase();
-    return schemaOverview.fields.filter(f => f.path.toLowerCase().includes(q) || f.field_type.toLowerCase().includes(q));
-  }, [schemaOverview, selectedFieldFilter]);
+  // Why each returned report matched (visual queries only; the database decided the match)
+  const highlight = lastRun?.mode === 'visual' && lastRun.matchType !== 'not' ? lastRun : null;
+  const findingConds = highlight ? conditionsUnder(highlight.conditions, 'findings') : [];
+  const issueConds = highlight ? conditionsUnder(highlight.conditions, 'findings.issues') : [];
+  const findingMatches = (finding: unknown) =>
+    findingConds.length > 0 && combine(findingConds.map(({ cond, relative }) => conditionMatches(finding, relative, cond)), highlight!.matchType);
+  const issueMatches = (issue: unknown) =>
+    issueConds.length > 0 && combine(issueConds.map(({ cond, relative }) => conditionMatches(issue, relative, cond)), highlight!.matchType);
+  const matchedValues = (report: InspectionReport) =>
+    (highlight?.conditions ?? [])
+      .filter(c => !c.field.startsWith('findings.') && c.field.includes('.'))
+      .map(c => ({ field: c.field, values: valuesAtPath(report, c.field).filter(v => v === null || typeof v !== 'object') }))
+      .filter(m => m.values.length > 0);
+
+  const compatTone = !compat ? '' : compat.status === 'COMPATIBLE' ? 'is-ok' : compat.status === 'INCOMPATIBLE' ? 'is-bad' : 'is-warn';
+  const compatTitle = !compat
+    ? ''
+    : compat.status === 'COMPATIBLE'
+      ? `Runs on DocumentDB ${compat.documentdb_version}`
+      : compat.status === 'INCOMPATIBLE'
+        ? `Not supported on DocumentDB ${compat.documentdb_version}`
+        : `Check before running on DocumentDB ${compat.documentdb_version}`;
+
+  const engineLabel = store.label;
+  const statValue = (value: number | undefined) => (value !== undefined ? value.toLocaleString() : schemaState === 'loading' ? '…' : '—');
+
+  const filterText = queryMode === 'raw' && !parsedRaw ? rawQueryText : JSON.stringify(activeFilter ?? {}, null, 2);
+
+  const tabs: { id: LibraryTab; label: string; count?: number }[] = [
+    { id: 'examples', label: 'Examples', count: QUERY_PRESETS.length },
+    { id: 'fields', label: 'Fields', count: schema?.fields.length },
+    { id: 'saved', label: 'Saved', count: saved.length },
+    { id: 'history', label: 'History', count: history.length }
+  ];
 
   return (
-    <div style={{ padding: '1.5rem', maxWidth: '1440px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      
-      {/* 1. PAGE HEADER */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+    <div className="nq-page">
+      {/* Header */}
+      <div className="nq-header">
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-            <div style={{
-              width: 40,
-              height: 40,
-              borderRadius: 'var(--radius-md)',
-              backgroundColor: '#2459c9',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#ffffff',
-              boxShadow: '0 4px 14px rgba(36, 89, 201, 0.35)'
-            }}>
-              <SearchCode size={22} />
-            </div>
-            <div>
-              <h1 style={{ fontSize: '1.45rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em', color: 'var(--color-text-primary)' }}>
-                Nested Document Query Explorer
-              </h1>
-              <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
-                Build, validate, understand, and evaluate MongoDB-compatible queries across nested and variable-schema inspection documents.
-              </p>
-            </div>
-          </div>
+          <div className="eyebrow">Query explorer</div>
+          <h2 style={{ marginTop: '0.2rem' }}>Nested Query Explorer</h2>
+          <p style={{ fontSize: '0.9rem', marginTop: '0.25rem', maxWidth: 760 }}>
+            Query variable-schema inspection reports by nested fields, arrays inside arrays and per-report telemetry.
+            Every filter is checked against DocumentDB&apos;s supported features as you build it.
+          </p>
         </div>
-
-        {/* Action button */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <button
-            onClick={handleExecuteQuery}
-            disabled={executing || !queryValidation.isValid}
-            className="btn btn-primary"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              fontWeight: 700,
-              padding: '0.65rem 1.35rem',
-              borderRadius: 'var(--radius-md)',
-              boxShadow: '0 4px 14px rgba(36, 89, 201, 0.35)'
-            }}
-          >
-            {executing ? (
-              <>
-                <RefreshCw size={16} className="spin" />
-                <span>Evaluating Query...</span>
-              </>
-            ) : (
-              <>
-                <Play size={16} />
-                <span>Execute Query</span>
-              </>
-            )}
-          </button>
-        </div>
+        <span className="nq-engine" title={`Queries run against ${engineLabel}`}>
+          <span className={`nq-engine-dot ${store.connected ? 'is-live' : ''}`} />
+          {engineLabel}
+          {store.isDocumentDb && <span style={{ color: 'var(--color-text-muted)', fontWeight: 500 }}>· {store.connected ? 'connected' : 'unreachable'}</span>}
+        </span>
       </div>
 
-      {/* Storage engine notice */}
-      <div style={{
-        backgroundColor: '#f3f7fe',
-        border: '1px solid #cddcf9',
-        borderRadius: 'var(--radius-md)',
-        padding: '0.75rem 1.15rem',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '0.75rem',
-        fontSize: '0.8rem',
-        color: '#163f94'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-          <Database size={18} color="#2459c9" style={{ flexShrink: 0 }} />
-          <div>
-            <strong>Nested Query Laboratory:</strong>{' '}
-            {store.isDocumentDb
-              ? 'Queries run against your inspection documents in the live Amazon DocumentDB cluster, with dot-notation and $elemMatch semantics.'
-              : `Queries run against your inspection documents in the ${store.mode === 'mongodb' ? 'local MongoDB' : 'in-memory'} store, with the same dot-notation and $elemMatch semantics as DocumentDB.`}
+      {/* Schema stats */}
+      <div className="nq-stats">
+        {[
+          { label: 'Your reports', value: schema?.total_documents },
+          { label: 'Field paths', value: schema?.fields.length },
+          { label: 'Nested paths', value: schema?.nested_fields_count },
+          { label: 'Array fields', value: schema?.arrays_count },
+          { label: 'Variable-schema groups', value: schema?.variable_schema_groups.length }
+        ].map(s => (
+          <div key={s.label} className="nq-stat">
+            <div className="nq-stat-label">{s.label}</div>
+            <div className="nq-stat-value">{statValue(s.value)}</div>
           </div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <button
-            onClick={() => setShowSchemaTree(!showSchemaTree)}
-            className="btn btn-ghost btn-sm"
-            style={{ fontSize: '0.75rem', color: '#163f94', padding: '0.2rem 0.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
-          >
-            <FolderTree size={14} />
-            <span>{showSchemaTree ? 'Hide Schema Tree' : 'Explore Document Schema'}</span>
-          </button>
-          <span style={{ fontSize: '0.72rem', fontWeight: 700, backgroundColor: '#e6eefc', padding: '0.2rem 0.55rem', borderRadius: 'var(--radius-full)', color: '#1c4db0' }}>
-            {store.isDocumentDb ? 'Amazon DocumentDB Engine' : store.mode === 'mongodb' ? 'Local MongoDB Engine' : 'Local In-Memory Engine'}
-          </span>
-        </div>
+        ))}
       </div>
 
-      {/* NOTIFICATIONS */}
-      {errorBanner && (
-        <div style={{
-          backgroundColor: '#fbeded',
-          border: '1px solid #f1c9c9',
-          borderRadius: 'var(--radius-md)',
-          padding: '0.85rem 1rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.75rem',
-          color: '#8e2525',
-          fontSize: '0.85rem'
-        }}>
+      {schemaState === 'error' && (
+        <div className="alert alert-warning">
           <AlertTriangle size={18} style={{ flexShrink: 0 }} />
-          <span>{errorBanner}</span>
+          <span style={{ flex: 1 }}>Your document schema could not be loaded, so field suggestions are limited. Queries still run.</span>
+          <button className="btn btn-secondary btn-sm" onClick={fetchSchema}><RefreshCw size={13} /> Retry</button>
         </div>
       )}
 
-      {successBanner && (
-        <div style={{
-          backgroundColor: '#e9f6f0',
-          border: '1px solid #b9e2cf',
-          borderRadius: 'var(--radius-md)',
-          padding: '0.85rem 1rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.75rem',
-          color: '#13623f',
-          fontSize: '0.85rem'
-        }}>
-          <CheckCircle2 size={18} style={{ flexShrink: 0 }} />
-          <span>{successBanner}</span>
-        </div>
-      )}
-
-      {/* 2. QUERY OVERVIEW PANEL (TOP STATISTICS) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.85rem' }}>
-        <div className="card" style={{ padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ width: 36, height: 36, borderRadius: 'var(--radius-sm)', backgroundColor: 'rgba(36, 89, 201, 0.1)', color: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <FileJson size={18} />
-          </div>
-          <div>
-            <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--color-text-muted)', fontWeight: 700 }}>
-              Documents Available
-            </div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-text-primary)' }}>
-              {schemaOverview?.total_documents ?? '—'}
-            </div>
-          </div>
-        </div>
-
-        <div className="card" style={{ padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ width: 36, height: 36, borderRadius: 'var(--radius-sm)', backgroundColor: 'rgba(34, 160, 107, 0.1)', color: '#22a06b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <FolderTree size={18} />
-          </div>
-          <div>
-            <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--color-text-muted)', fontWeight: 700 }}>
-              Nested Paths
-            </div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-text-primary)' }}>
-              {schemaOverview?.nested_fields_count ?? 99}
-            </div>
-          </div>
-        </div>
-
-        <div className="card" style={{ padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ width: 36, height: 36, borderRadius: 'var(--radius-sm)', backgroundColor: 'rgba(201, 162, 58, 0.1)', color: '#c9a23a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Layers size={18} />
-          </div>
-          <div>
-            <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--color-text-muted)', fontWeight: 700 }}>
-              Array Fields
-            </div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-text-primary)' }}>
-              {schemaOverview?.arrays_count ?? 7}
-            </div>
-          </div>
-        </div>
-
-        <div className="card" style={{ padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ width: 36, height: 36, borderRadius: 'var(--radius-sm)', backgroundColor: 'rgba(201, 162, 58, 0.1)', color: '#c9a23a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Sliders size={18} />
-          </div>
-          <div>
-            <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--color-text-muted)', fontWeight: 700 }}>
-              Query Conditions
-            </div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-text-primary)' }}>
-              {queryMode === 'visual' ? conditions.length : 'Raw JSON'}
-            </div>
-          </div>
-        </div>
-
-        <div className="card" style={{ padding: '0.85rem 1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ width: 36, height: 36, borderRadius: 'var(--radius-sm)', backgroundColor: 'rgba(103, 113, 138, 0.1)', color: '#67718a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Clock size={18} />
-          </div>
-          <div>
-            <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--color-text-muted)', fontWeight: 700 }}>
-              Last Query Time
-            </div>
-            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-text-primary)' }}>
-              {activeExecutionTime.toFixed(2)} ms
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 19. DOCUMENT SCHEMA EXPLORER (COLLAPSIBLE DRAWER) */}
-      {showSchemaTree && schemaOverview && (
-        <div className="card" style={{ padding: '1.25rem', backgroundColor: 'var(--color-bg-surface-secondary)', border: '1px solid var(--color-border)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-            <div>
-              <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <FolderTree size={16} color="var(--color-primary)" />
-                Discovered Document Structure & Variable-Schema Hierarchy
-              </h4>
-              <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                Click any path to automatically add it as a query condition
-              </span>
-            </div>
-
-            <input
-              type="text"
-              placeholder="Filter fields by name or type..."
-              value={selectedFieldFilter}
-              onChange={e => setSelectedFieldFilter(e.target.value)}
-              className="form-control"
-              style={{ width: '240px', padding: '0.35rem 0.65rem', fontSize: '0.78rem' }}
-            />
-          </div>
-
-          <div style={{
-            maxHeight: '260px',
-            overflowY: 'auto',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: '0.45rem',
-            padding: '0.25rem'
-          }}>
-            {filteredSchemaFields.map(field => (
-              <button
-                key={field.path}
-                onClick={() => handleAddCondition(field.path)}
-                type="button"
-                style={{
-                  padding: '0.45rem 0.65rem',
-                  borderRadius: 'var(--radius-sm)',
-                  border: '1px solid var(--color-border)',
-                  backgroundColor: 'var(--color-bg-surface)',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  fontSize: '0.75rem',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  transition: 'all var(--transition-fast)'
-                }}
-                title={`Click to add '${field.path}' to query`}
-              >
-                <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  <code style={{ fontWeight: 700, color: 'var(--color-primary)' }}>{field.display_name}</code>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
-                  <span style={{
-                    fontSize: '0.65rem',
-                    textTransform: 'uppercase',
-                    padding: '0.1rem 0.35rem',
-                    borderRadius: 'var(--radius-sm)',
-                    backgroundColor: field.is_variable_schema ? '#fbf4e2' : '#eceff5',
-                    color: field.is_variable_schema ? '#7a5a12' : '#4e5871',
-                    fontWeight: 600
-                  }}>
-                    {field.field_type}
-                  </span>
-                  <span style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)' }}>
-                    {field.occurrence_count}/{field.total_documents}
-                  </span>
-                </div>
+      <div className="nq-workbench">
+        {/* Library */}
+        <aside className="card nq-library" aria-label="Query library">
+          <div className="nq-tabs" role="tablist">
+            {tabs.map(t => (
+              <button key={t.id} role="tab" aria-selected={libraryTab === t.id} className="nq-tab" onClick={() => setLibraryTab(t.id)}>
+                {t.label}
+                {t.count !== undefined && t.count > 0 && <span className="nq-tab-count">{t.count}</span>}
               </button>
             ))}
           </div>
-        </div>
-      )}
 
-      {/* TABS: PRESETS / SAVED / HISTORY / EDUCATION */}
-      <div style={{ display: 'flex', gap: '0.35rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.25rem' }}>
-        {[
-          { id: 'presets', label: '12 Pre-Configured Presets', icon: Sliders, count: QUERY_PRESETS.length },
-          { id: 'saved', label: 'Saved Queries', icon: Bookmark, count: savedQueries.length },
-          { id: 'history', label: 'Query History', icon: History, count: queryHistory.length },
-          { id: 'education', label: 'Why Amazon DocumentDB?', icon: BookOpen }
-        ].map(t => {
-          const Icon = t.icon;
-          const isActive = activeTab === t.id;
-          return (
-            <button
-              key={t.id}
-              onClick={() => setActiveTab(t.id as any)}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.45rem',
-                padding: '0.55rem 1rem',
-                borderRadius: 'var(--radius-md) var(--radius-md) 0 0',
-                border: 'none',
-                borderBottom: isActive ? '3px solid var(--color-primary)' : '3px solid transparent',
-                backgroundColor: isActive ? 'var(--color-bg-surface)' : 'transparent',
-                color: isActive ? 'var(--color-primary)' : 'var(--color-text-secondary)',
-                fontWeight: isActive ? 700 : 500,
-                fontSize: '0.825rem',
-                cursor: 'pointer'
-              }}
-            >
-              <Icon size={15} />
-              <span>{t.label}</span>
-              {t.count !== undefined && (
-                <span style={{
-                  fontSize: '0.68rem',
-                  fontWeight: 700,
-                  backgroundColor: isActive ? 'var(--color-primary)' : 'var(--color-bg-surface-tertiary)',
-                  color: isActive ? '#ffffff' : 'var(--color-text-secondary)',
-                  padding: '0.1rem 0.4rem',
-                  borderRadius: 'var(--radius-full)'
-                }}>
-                  {t.count}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* 3. PRESETS TAB */}
-      {activeTab === 'presets' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '0.75rem' }}>
-          {QUERY_PRESETS.map(preset => {
-            const compColor = preset.complexity === 'Simple' ? '#22a06b' : preset.complexity === 'Moderate' ? '#3a6fe0' : preset.complexity === 'Complex' ? '#c9a23a' : '#d04545';
-            return (
-              <button
-                key={preset.id}
-                onClick={() => handleSelectPreset(preset)}
-                type="button"
-                className="card"
-                style={{
-                  padding: '0.85rem 1rem',
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  gap: '0.4rem',
-                  border: '1px solid var(--color-border)',
-                  backgroundColor: 'var(--color-bg-surface)',
-                  transition: 'all var(--transition-fast)'
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <strong style={{ fontSize: '0.85rem', color: 'var(--color-text-primary)' }}>
-                    {preset.name}
-                  </strong>
-                  <span style={{
-                    fontSize: '0.68rem',
-                    fontWeight: 800,
-                    textTransform: 'uppercase',
-                    color: compColor,
-                    backgroundColor: `${compColor}15`,
-                    padding: '0.15rem 0.45rem',
-                    borderRadius: 'var(--radius-full)'
-                  }}>
-                    {preset.complexity}
-                  </span>
-                </div>
-                <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--color-text-secondary)', lineHeight: 1.35 }}>
-                  {preset.description}
-                </p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
-                  <span>Path:</span>
-                  <code style={{ color: 'var(--color-primary)', backgroundColor: 'var(--color-bg-surface-secondary)', padding: '0.1rem 0.35rem', borderRadius: 'var(--radius-sm)' }}>
-                    {preset.expected_path}
-                  </code>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* SAVED QUERIES TAB */}
-      {activeTab === 'saved' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          {savedQueries.length === 0 ? (
-            <div className="card" style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-              <Bookmark size={32} style={{ margin: '0 auto 0.5rem auto', opacity: 0.5 }} />
-              <p style={{ margin: 0, fontSize: '0.85rem' }}>No queries saved yet.</p>
-              <span style={{ fontSize: '0.75rem' }}>Construct a query below and click &quot;Save Query&quot; to preserve it for quick access.</span>
+          {libraryTab === 'fields' && schema && schema.fields.length > 0 && (
+            <div className="nq-library-tools">
+              <input
+                type="search"
+                className="form-control"
+                placeholder="Filter by path or type"
+                value={fieldFilter}
+                onChange={e => setFieldFilter(e.target.value)}
+                style={{ padding: '0.45rem 0.65rem', fontSize: '0.8rem' }}
+              />
             </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '0.75rem' }}>
-              {savedQueries.map(item => (
-                <div key={item.id} className="card" style={{ padding: '0.85rem 1rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '0.5rem' }}>
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <strong style={{ fontSize: '0.85rem' }}>{item.name}</strong>
-                      <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>{item.created_at}</span>
+          )}
+
+          <div className="nq-library-body" role="tabpanel">
+            {libraryTab === 'examples' && (
+              <>
+                <div className="nq-library-note">Click an example to load and run it.</div>
+                {QUERY_PRESETS.map(preset => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    className={`nq-item ${activePresetId === preset.id ? 'is-active' : ''}`}
+                    onClick={() => handleSelectPreset(preset)}
+                    title={preset.explanation}
+                  >
+                    <div className="nq-item-row">
+                      <span className="nq-item-title">{preset.name}</span>
                     </div>
-                    {item.description && <p style={{ margin: '0.2rem 0', fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>{item.description}</p>}
-                    <code style={{ fontSize: '0.72rem', color: 'var(--color-primary)', display: 'block', backgroundColor: 'var(--color-bg-surface-secondary)', padding: '0.35rem', borderRadius: 'var(--radius-sm)', marginTop: '0.35rem' }}>
-                      {JSON.stringify(item.query).substring(0, 80)}...
-                    </code>
+                    <div className="nq-item-desc">{preset.description}</div>
+                    <div className="nq-item-meta">
+                      <ComplexityMeter level={preset.complexity} />
+                      <span className="nq-path">{preset.expected_path}</span>
+                    </div>
+                  </button>
+                ))}
+              </>
+            )}
+
+            {libraryTab === 'fields' && (
+              schemaState === 'loading' ? (
+                <div className="nq-empty-list"><RefreshCw size={16} className="spin" /> Reading your documents…</div>
+              ) : !schema || schema.fields.length === 0 ? (
+                <div className="nq-empty-list">
+                  No fields yet. <Link to="/create-inspection">Create a report</Link> and its fields appear here.
+                </div>
+              ) : (
+                <>
+                  <div className="nq-library-note">
+                    Discovered in {schema.total_documents} {schema.total_documents === 1 ? 'report' : 'reports'}. Click a field to add it as a condition.
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.4rem', marginTop: '0.5rem' }}>
-                    <button onClick={() => handleLoadSavedQuery(item)} className="btn btn-secondary btn-sm" style={{ fontSize: '0.72rem' }}>
-                      Load Query
+                  {filteredFields.map(f => (
+                    <button key={f.path} type="button" className="nq-item" onClick={() => { handleAddCondition(f.path); showToast(`Added ${f.path}`); }}>
+                      <div className="nq-item-row">
+                        <span className="nq-path" style={{ fontSize: '0.76rem' }}>{f.path}</span>
+                        <span className={`nq-type ${f.is_variable_schema ? 'is-variable' : ''}`}>{f.field_type}</span>
+                      </div>
+                      <div className="nq-item-meta">
+                        <span>in {f.occurrence_count} of {f.total_documents}</span>
+                        {f.is_variable_schema && <span className="text-gold">variable schema</span>}
+                        {f.example_value !== undefined && f.example_value !== null && <span>e.g. {formatValue(f.example_value)}</span>}
+                      </div>
                     </button>
-                    <button onClick={() => handleDeleteSavedQuery(item.id)} className="btn btn-ghost btn-sm" style={{ color: 'var(--color-danger)', padding: '0.25rem 0.4rem' }}>
+                  ))}
+                  {filteredFields.length === 0 && <div className="nq-empty-list">No field matches “{fieldFilter}”.</div>}
+                </>
+              )
+            )}
+
+            {libraryTab === 'saved' && (
+              saved.length === 0 ? (
+                <div className="nq-empty-list">
+                  <Bookmark size={20} style={{ opacity: 0.5 }} />
+                  <div style={{ marginTop: '0.4rem' }}>Nothing saved yet. Use <strong>Save</strong> in the builder to keep a query here.</div>
+                </div>
+              ) : saved.map(item => (
+                <div key={item.id} className="nq-item" style={{ cursor: 'default' }}>
+                  <div className="nq-item-row">
+                    <button type="button" className="nq-link-btn" style={{ textAlign: 'left', color: 'var(--color-text-primary)', fontSize: '0.83rem' }} onClick={() => handleRunStored(item)}>
+                      {item.name}
+                    </button>
+                    <button className="nq-icon-btn is-danger" onClick={() => setSaved(prev => prev.filter(q => q.id !== item.id))} aria-label={`Delete ${item.name}`} title="Delete">
                       <Trash2 size={14} />
                     </button>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* QUERY HISTORY TAB */}
-      {activeTab === 'history' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-          {queryHistory.length === 0 ? (
-            <div className="card" style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-              <History size={32} style={{ margin: '0 auto 0.5rem auto', opacity: 0.5 }} />
-              <p style={{ margin: 0, fontSize: '0.85rem' }}>No query executions recorded in history yet.</p>
-            </div>
-          ) : (
-            queryHistory.map(item => (
-              <div key={item.id} className="card" style={{ padding: '0.75rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <strong style={{ fontSize: '0.85rem' }}>{item.name}</strong>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>{item.timestamp}</span>
-                    <span className="badge badge-info" style={{ fontSize: '0.68rem' }}>{item.total_matches} matches</span>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>{item.execution_time_ms.toFixed(2)}ms</span>
+                  <div className="nq-item-meta">
+                    <span>{item.created_at}</span>
+                    <span>{item.conditions ? 'Builder' : 'JSON'}</span>
                   </div>
-                  <code style={{ fontSize: '0.72rem', color: 'var(--color-text-secondary)' }}>
-                    {JSON.stringify(item.query)}
-                  </code>
+                  <div className="nq-path" style={{ marginTop: '0.3rem' }}>{formatValue(item.query)}</div>
                 </div>
-                <button
-                  onClick={() => {
-                    if (item.conditions) {
-                      setQueryMode('visual');
-                      setConditions(item.conditions);
-                      if (item.match_type) setMatchType(item.match_type as any);
-                    } else {
-                      setQueryMode('raw');
-                      setRawQueryText(JSON.stringify(item.query, null, 2));
-                    }
-                  }}
-                  className="btn btn-secondary btn-sm"
-                  style={{ fontSize: '0.72rem' }}
-                >
-                  Run Again
-                </button>
-              </div>
-            ))
-          )}
-        </div>
-      )}
+              ))
+            )}
 
-      {/* 22. "WHY AMAZON DOCUMENTDB?" EDUCATIONAL TAB */}
-      {activeTab === 'education' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.85rem' }}>
-          {EDUCATIONAL_DOCUMENTDB_POINTS.map((pt, idx) => (
-            <div key={idx} className="card" style={{ padding: '1rem', borderLeft: '3px solid var(--color-primary)' }}>
-              <strong style={{ fontSize: '0.85rem', color: 'var(--color-primary)', display: 'block', marginBottom: '0.35rem' }}>
-                {pt.title}
-              </strong>
-              <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--color-text-secondary)', lineHeight: 1.45 }}>
-                {pt.content}
-              </p>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* 4 & 5. MAIN 2-COLUMN SECTION: BUILDER VS GENERATED MONGODB QUERY */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(380px, 1fr) minmax(380px, 1fr)', gap: '1.5rem', alignItems: 'start' }}>
-        
-        {/* LEFT COLUMN: QUERY BUILDER / RAW EDITOR */}
-        <div className="card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          
-          {/* Builder Mode Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.75rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Sliders size={17} color="var(--color-primary)" />
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0 }}>
-                {queryMode === 'visual' ? 'Visual Query Builder' : 'Raw MongoDB Query Editor'}
-              </h3>
-            </div>
-
-            {/* Mode Switcher */}
-            <div style={{ display: 'flex', backgroundColor: 'var(--color-bg-surface-secondary)', padding: '0.15rem', borderRadius: 'var(--radius-sm)' }}>
-              <button
-                onClick={() => setQueryMode('visual')}
-                className={`btn btn-sm ${queryMode === 'visual' ? 'btn-primary' : 'btn-ghost'}`}
-                style={{ fontSize: '0.72rem', padding: '0.2rem 0.55rem' }}
-              >
-                Visual Builder
-              </button>
-              <button
-                onClick={() => setQueryMode('raw')}
-                className={`btn btn-sm ${queryMode === 'raw' ? 'btn-primary' : 'btn-ghost'}`}
-                style={{ fontSize: '0.72rem', padding: '0.2rem 0.55rem' }}
-              >
-                Raw Query
-              </button>
-            </div>
-          </div>
-
-          {/* VISUAL BUILDER MODE */}
-          {queryMode === 'visual' ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              
-              {/* Logic Match Selector */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'var(--color-bg-surface-secondary)', padding: '0.6rem 0.85rem', borderRadius: 'var(--radius-md)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', fontWeight: 600 }}>
-                  <span>Match Logic:</span>
-                  <select
-                    value={matchType}
-                    onChange={e => setMatchType(e.target.value as any)}
-                    className="form-control"
-                    style={{ width: '160px', padding: '0.3rem 0.5rem', fontSize: '0.78rem', fontWeight: 700 }}
-                  >
-                    <option value="and">ALL Conditions (AND)</option>
-                    <option value="or">ANY Condition (OR)</option>
-                    <option value="not">NONE of Conditions (NOT)</option>
-                  </select>
+            {libraryTab === 'history' && (
+              history.length === 0 ? (
+                <div className="nq-empty-list">
+                  <History size={20} style={{ opacity: 0.5 }} />
+                  <div style={{ marginTop: '0.4rem' }}>Queries you run appear here.</div>
                 </div>
-
-                <button
-                  onClick={() => setConditions([{ field: 'findings.severity', operator: 'equals', value: 'high', value_type: 'categorical' }])}
-                  className="btn btn-ghost btn-sm"
-                  style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}
-                >
-                  Reset
-                </button>
-              </div>
-
-              {/* Conditions List */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                {conditions.map((cond, idx) => {
-                  const inferredType = KNOWN_FIELD_TYPE_MAP[cond.field] || cond.value_type || 'string';
-                  const opDef = FIELD_TYPE_OPERATORS[inferredType] || FIELD_TYPE_OPERATORS.string;
-
-                  return (
-                    <div
-                      key={idx}
-                      style={{
-                        padding: '0.75rem',
-                        backgroundColor: 'var(--color-bg-surface-secondary)',
-                        borderRadius: 'var(--radius-md)',
-                        border: '1px solid var(--color-border)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '0.5rem'
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-text-muted)' }}>
-                          Condition #{idx + 1}
-                        </span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                          <span style={{
-                            fontSize: '0.65rem',
-                            textTransform: 'uppercase',
-                            fontWeight: 700,
-                            padding: '0.1rem 0.4rem',
-                            borderRadius: 'var(--radius-sm)',
-                            backgroundColor: 'var(--color-bg-surface)',
-                            color: 'var(--color-primary)'
-                          }}>
-                            {inferredType}
-                          </span>
-                          {conditions.length > 1 && (
-                            <button
-                              onClick={() => handleRemoveCondition(idx)}
-                              className="btn btn-ghost btn-sm"
-                              style={{ color: 'var(--color-danger)', padding: '0.15rem 0.35rem' }}
-                              title="Remove condition"
-                            >
-                              <Trash2 size={13} />
-                            </button>
-                          )}
-                        </div>
+              ) : (
+                <>
+                  <div className="nq-library-note" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Click to run again.</span>
+                    <button className="nq-link-btn" onClick={() => setHistory([])}>Clear</button>
+                  </div>
+                  {history.map(item => (
+                    <button key={item.id} type="button" className="nq-item" onClick={() => handleRunStored(item)}>
+                      <div className="nq-item-title" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.76rem', fontWeight: 500, overflowWrap: 'anywhere' }}>{item.name}</div>
+                      <div className="nq-item-meta">
+                        <span>{item.timestamp}</span>
+                        <span>{item.total_matches} {item.total_matches === 1 ? 'match' : 'matches'}</span>
+                        <span>{item.execution_time_ms.toFixed(1)} ms</span>
                       </div>
+                    </button>
+                  ))}
+                </>
+              )
+            )}
+          </div>
+        </aside>
 
-                      {/* Field, Operator, Value Inputs Grid */}
-                      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1.2fr 1.4fr', gap: '0.45rem' }}>
-                        {/* Field input */}
-                        <div>
+        <div className="nq-main">
+          {/* Builder */}
+          <section
+            className="card"
+            aria-label="Query builder"
+            onKeyDown={e => {
+              if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                if (validation.isValid && !executing) handleRun();
+              }
+            }}
+          >
+            <div className="card-header">
+              <h3 className="card-title">Build a query</h3>
+              <div className="nq-segmented" role="group" aria-label="Editor">
+                <button aria-pressed={queryMode === 'visual'} onClick={() => setQueryMode('visual')}>Builder</button>
+                <button aria-pressed={queryMode === 'raw'} onClick={() => setQueryMode('raw')}><Braces size={13} style={{ verticalAlign: '-2px' }} /> JSON</button>
+              </div>
+            </div>
+
+            {queryMode === 'visual' ? (
+              <>
+                <div className="nq-logic">
+                  <span>Match reports where</span>
+                  <div className="nq-segmented" role="group" aria-label="Match logic">
+                    {MATCH_OPTIONS.map(o => (
+                      <button key={o.id} aria-pressed={matchType === o.id} onClick={() => { setMatchType(o.id); setActivePresetId(null); }}>{o.label}</button>
+                    ))}
+                  </div>
+                  <span>of these conditions hold</span>
+                </div>
+
+                <datalist id="nq-field-paths">
+                  {fieldSuggestions.map(p => <option key={p} value={p} />)}
+                </datalist>
+
+                <div className="nq-conditions">
+                  {conditions.map((cond, idx) => {
+                    const type = KNOWN_FIELD_TYPE_MAP[cond.field] || cond.value_type || 'string';
+                    const opDef = FIELD_TYPE_OPERATORS[type] || FIELD_TYPE_OPERATORS.string;
+                    const info = schemaByPath[cond.field];
+                    const inArray = [...ARRAY_PREFIXES].reverse().find(p => cond.field.startsWith(`${p}.`));
+                    return (
+                      <React.Fragment key={idx}>
+                        {idx > 0 && <div className="nq-joiner"><span>{JOINER[matchType]}</span></div>}
+                        <div className="nq-cond">
+                          <span className="nq-cond-index">{idx + 1}</span>
                           <input
                             type="text"
-                            placeholder="Field path (e.g. findings.severity)"
+                            list="nq-field-paths"
+                            aria-label={`Field for condition ${idx + 1}`}
+                            placeholder="Field path, e.g. findings.severity"
                             value={cond.field}
                             onChange={e => handleUpdateCondition(idx, { field: e.target.value })}
-                            className="form-control"
-                            style={{ fontSize: '0.78rem', padding: '0.35rem 0.5rem', fontFamily: 'var(--font-mono)' }}
+                            className="form-control nq-cond-field"
+                            spellCheck={false}
                           />
-                        </div>
-
-                        {/* Operator Select */}
-                        <div>
                           <select
+                            aria-label={`Operator for condition ${idx + 1}`}
                             value={cond.operator}
                             onChange={e => handleUpdateCondition(idx, { operator: e.target.value })}
                             className="form-control"
-                            style={{ fontSize: '0.78rem', padding: '0.35rem 0.5rem' }}
                           >
-                            {opDef.allowedOperators.map(op => (
-                              <option key={op.id} value={op.id}>
-                                {op.label}
-                              </option>
-                            ))}
+                            {opDef.allowedOperators.map(op => <option key={op.id} value={op.id}>{op.label}</option>)}
                           </select>
-                        </div>
-
-                        {/* Value Input */}
-                        <div>
                           {cond.operator === 'is_true' || cond.operator === 'is_false' ? (
-                            <div style={{ fontSize: '0.78rem', padding: '0.35rem', color: 'var(--color-text-muted)' }}>
-                              Fixed boolean
-                            </div>
+                            <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', paddingLeft: '0.25rem' }}>No value needed</span>
                           ) : cond.operator === 'exists' ? (
                             <select
-                              value={String(cond.value !== false)}
+                              aria-label={`Value for condition ${idx + 1}`}
+                              value={String(cond.value !== false && cond.value !== 'false')}
                               onChange={e => handleUpdateCondition(idx, { value: e.target.value === 'true' })}
                               className="form-control"
-                              style={{ fontSize: '0.78rem', padding: '0.35rem 0.5rem' }}
                             >
-                              <option value="true">Must Exist (True)</option>
-                              <option value="false">Must NOT Exist (False)</option>
+                              <option value="true">is present</option>
+                              <option value="false">is missing</option>
                             </select>
                           ) : (
                             <input
-                              type={inferredType === 'number' || cond.operator === 'array_size' ? 'number' : 'text'}
+                              aria-label={`Value for condition ${idx + 1}`}
+                              type={type === 'number' || cond.operator === 'array_size' ? 'number' : 'text'}
                               placeholder={opDef.placeholder}
                               value={cond.value ?? ''}
                               onChange={e => handleUpdateCondition(idx, { value: e.target.value })}
                               className="form-control"
-                              style={{ fontSize: '0.78rem', padding: '0.35rem 0.5rem' }}
                             />
                           )}
+                          <button
+                            className="nq-icon-btn is-danger"
+                            onClick={() => handleRemoveCondition(idx)}
+                            disabled={conditions.length === 1}
+                            style={conditions.length === 1 ? { visibility: 'hidden' } : undefined}
+                            aria-label={`Remove condition ${idx + 1}`}
+                            title="Remove condition"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                          {cond.field.trim() && (
+                            <div className="nq-cond-hint">
+                              <span className={`nq-type ${info?.is_variable_schema || cond.field.startsWith('dynamic_attributes.') ? 'is-variable' : ''}`}>{type}</span>
+                              {inArray && <span>inside <span className="nq-path">{inArray.split('.').map(part => `${part}[]`).join('.')}</span></span>}
+                              {info ? <span>present in {info.occurrence_count} of {info.total_documents} reports</span>
+                                : schemaState === 'ready' && <span>not found in your reports yet</span>}
+                            </div>
+                          )}
+                        </div>
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <>
+                <textarea
+                  className="nq-json-editor"
+                  aria-label="MongoDB filter as JSON"
+                  value={rawQueryText}
+                  onChange={e => { setRawQueryText(e.target.value); setActivePresetId(null); }}
+                  spellCheck={false}
+                  rows={10}
+                />
+                <p style={{ fontSize: '0.76rem', color: 'var(--color-text-muted)', marginTop: '0.5rem' }}>
+                  A read-only find() filter. Write operators and server-side JavaScript are rejected before they reach the database.
+                </p>
+              </>
+            )}
+
+            {runError && (
+              <div className="alert alert-danger" style={{ marginTop: '1rem' }}>
+                <XCircle size={18} style={{ flexShrink: 0 }} />
+                <span>{runError}</span>
+              </div>
+            )}
+
+            <div className="nq-builder-footer">
+              <div className="nq-footer-group">
+                {queryMode === 'visual' && (
+                  <button className="btn btn-secondary btn-sm" onClick={() => handleAddCondition()}>
+                    <Plus size={14} /> Add condition
+                  </button>
+                )}
+                <button className="btn btn-ghost btn-sm" onClick={handleReset}>
+                  <RotateCcw size={14} /> Reset
+                </button>
+                {validation.isValid && compat && compatState === 'idle' && compat.status !== 'COMPATIBLE' ? (
+                  // Valid JSON can still be rejected by DocumentDB; say so next to the Run button
+                  <a href="#nq-filter" className={`nq-validity ${compat.status === 'INCOMPATIBLE' ? 'is-bad' : 'is-warn'}`}>
+                    <ShieldAlert size={14} />
+                    {compatTitle} · details
+                  </a>
+                ) : (
+                  <span className={`nq-validity ${validation.isValid ? 'is-ok' : 'is-bad'}`}>
+                    {validation.isValid ? <CheckCircle2 size={14} /> : <AlertTriangle size={14} />}
+                    {validation.message}
+                  </span>
+                )}
+              </div>
+              <div className="nq-footer-group">
+                {saving ? (
+                  <form className="nq-save-form" onSubmit={e => { e.preventDefault(); confirmSave(); }}>
+                    <input
+                      autoFocus
+                      className="form-control"
+                      aria-label="Name for the saved query"
+                      value={saveName}
+                      onChange={e => setSaveName(e.target.value)}
+                      onKeyDown={e => e.key === 'Escape' && setSaving(false)}
+                    />
+                    <button type="submit" className="btn btn-secondary btn-sm" disabled={!saveName.trim()}>Save</button>
+                    <button type="button" className="nq-icon-btn" onClick={() => setSaving(false)} aria-label="Cancel saving"><X size={14} /></button>
+                  </form>
+                ) : (
+                  <button className="btn btn-ghost btn-sm" onClick={startSave} disabled={!validation.isValid}>
+                    <Bookmark size={14} /> Save
+                  </button>
+                )}
+                <button className="btn btn-primary" onClick={() => handleRun()} disabled={executing || !validation.isValid} title="Ctrl + Enter">
+                  {executing ? <RefreshCw size={15} className="spin" /> : <Play size={15} />}
+                  {executing ? 'Running…' : 'Run query'}
+                  {!executing && <span className="nq-kbd">Ctrl ↵</span>}
+                </button>
+              </div>
+            </div>
+          </section>
+
+          {/* Generated filter + analysis */}
+          <section className="card" aria-label="Generated filter" id="nq-filter" style={{ scrollMarginTop: '7rem' }}>
+            <div className="card-header">
+              <h3 className="card-title">DocumentDB filter</h3>
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={() => copyText('filter', `db.inspection_reports.find(${filterText})`)}
+              >
+                {copied === 'filter' ? <Check size={14} /> : <Copy size={14} />}
+                {copied === 'filter' ? 'Copied' : 'Copy'}
+              </button>
+            </div>
+            <div className="nq-filter-grid">
+              <pre className="nq-code" aria-label="Filter sent to the database">
+                <span className="t-call">db.inspection_reports.find</span><span className="t-punc">(</span>{'\n'}
+                {queryMode === 'raw' && !parsedRaw ? rawQueryText : highlightJson(filterText)}
+                {'\n'}<span className="t-punc">)</span>
+              </pre>
+
+              <div className="nq-facts">
+                <div className="nq-fact-row">
+                  <span className={`nq-chip ${elemFields.length ? 'is-primary' : ''}`}>
+                    {elemFields.length ? `$elemMatch on ${elemFields.join(', ')}` : 'Dot notation'}
+                  </span>
+                  <span className="nq-chip">{leafPaths.length} {leafPaths.length === 1 ? 'field' : 'fields'}</span>
+                  {depth > 0 && <span className="nq-chip">Depth {depth}</span>}
+                </div>
+
+                {compat && compatState !== 'checking' ? (
+                  <div className={`nq-compat ${compatTone}`} role="status">
+                    <div className="nq-compat-title">
+                      {compat.status === 'COMPATIBLE' ? <ShieldCheck size={15} /> : <ShieldAlert size={15} />}
+                      {compatTitle}
+                    </div>
+                    {(compat.issues.length > 0 || compat.behavioral_differences.length > 0) && (
+                      <ul>
+                        {compat.issues.slice(0, 3).map((issue, i) => <li key={`i${i}`}>{issue.message}</li>)}
+                        {compat.behavioral_differences.slice(0, 2).map((b, i) => <li key={`b${i}`}>{b.feature}: {b.documentdb_behavior}</li>)}
+                      </ul>
+                    )}
+                    {compat.alternative_query && compat.status !== 'COMPATIBLE' && (
+                      <button className="btn btn-secondary btn-sm" style={{ marginTop: '0.55rem' }} onClick={() => applyRewrite(compat.alternative_query!)}>
+                        Use the compatible rewrite
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="nq-compat" role="status" style={{ color: 'var(--color-text-muted)' }}>
+                    {compatState === 'checking' ? (
+                      <span className="nq-compat-title" style={{ fontWeight: 500 }}><RefreshCw size={14} className="spin" /> Checking DocumentDB compatibility…</span>
+                    ) : compatState === 'error' ? (
+                      'The compatibility check is unavailable right now.'
+                    ) : (
+                      'Fix the filter to check DocumentDB compatibility.'
+                    )}
+                  </div>
+                )}
+
+                <div>
+                  <div style={{ fontSize: '0.78rem', fontWeight: 650, color: 'var(--color-text-primary)', marginBottom: '0.3rem' }}>How it matches</div>
+                  {explanation.map((line, i) => <p key={i} className="nq-explain" style={{ marginTop: i ? '0.35rem' : 0 }}>{line}</p>)}
+                </div>
+
+                <div>
+                  <button className="btn btn-ghost btn-sm" onClick={handleExplain} disabled={explaining || !activeFilter} style={{ paddingLeft: 0, color: 'var(--color-primary)' }}>
+                    {explaining ? <RefreshCw size={14} className="spin" /> : <Sparkles size={14} />}
+                    {explaining ? 'Asking Gemini…' : 'Explain with Gemini and suggest indexes'}
+                  </button>
+                  {aiError && <p style={{ fontSize: '0.78rem', color: 'var(--color-danger)', margin: '0.25rem 0 0' }}>{aiError}</p>}
+                </div>
+              </div>
+            </div>
+
+            {aiExplanation && (
+              <div className="nq-ai" style={{ marginTop: '1.1rem' }}>
+                {aiExplanation.explanation}
+                {aiExplanation.index_recommendations.length > 0 && (
+                  <div style={{ marginTop: '0.6rem', whiteSpace: 'normal' }}>
+                    <strong style={{ color: 'var(--color-text-primary)', fontSize: '0.78rem' }}>Suggested indexes</strong>
+                    {aiExplanation.index_recommendations.map((rec, i) => (
+                      <div key={rec} className="nq-index-rec">
+                        <code>{rec}</code>
+                        <button className="nq-icon-btn" onClick={() => copyText(`idx${i}`, rec)} aria-label="Copy index command" title="Copy">
+                          {copied === `idx${i}` ? <Check size={14} /> : <Copy size={14} />}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+
+          {/* Results */}
+          <section className="card" aria-label="Query results" aria-busy={executing}>
+            <div className="card-header" style={{ flexWrap: 'wrap' }}>
+              <div>
+                <h3 className="card-title">
+                  {hasRun ? `${matchCount} matching ${matchCount === 1 ? 'report' : 'reports'}` : 'Results'}
+                </h3>
+                {hasRun && (
+                  <div className="nq-results-meta" style={{ marginTop: '0.2rem' }}>
+                    <span>{execMs.toFixed(2)} ms on {engineLabel}</span>
+                    {atLimit && <span>· showing the first {lastRun?.limit}; raise the limit to see more</span>}
+                  </div>
+                )}
+              </div>
+              <label className="nq-results-meta" style={{ gap: '0.4rem' }}>
+                Show up to
+                <select
+                  className="form-control"
+                  value={limit}
+                  onChange={e => {
+                    const next = Number(e.target.value);
+                    setLimit(next);
+                    if (hasRun && validation.isValid) handleRun(next);
+                  }}
+                  style={{ width: 'auto', padding: '0.3rem 0.5rem', fontSize: '0.8rem' }}
+                >
+                  {LIMITS.map(l => <option key={l} value={l}>{l}</option>)}
+                </select>
+              </label>
+            </div>
+
+            {rawResponse && rawResponse.warnings.length > 0 && (
+              <div className="alert alert-warning" style={{ marginBottom: '1rem' }}>
+                <AlertTriangle size={18} style={{ flexShrink: 0 }} />
+                <div>{rawResponse.warnings.map((w, i) => <div key={i}>{w}</div>)}</div>
+              </div>
+            )}
+
+            {matches.length > 0 ? (
+              <div className="nq-results-list">
+                {matches.map(report => {
+                  const isExpanded = !!expanded[report.id];
+                  const isJson = !!jsonView[report.id];
+                  const findings = report.findings ?? [];
+                  const flagged = findings.map(f => findingMatches(f));
+                  const matchTotal = flagged.filter(Boolean).length;
+                  const ordered = findings.map((f, i) => ({ f, i, hit: flagged[i] }));
+                  const collapsed = [...ordered.filter(o => o.hit), ...ordered.filter(o => !o.hit)];
+                  const visible = isExpanded ? ordered : collapsed.slice(0, Math.max(3, matchTotal));
+                  const values = matchedValues(report);
+
+                  return (
+                    <article key={report.id} className="nq-result">
+                      <div className="nq-result-top">
+                        <div className="nq-result-badges">
+                          <code style={{ fontWeight: 700 }}>{report.id}</code>
+                          <StatusBadge status={report.status} />
+                          <SeverityBadge severity={report.overall_severity} />
+                          <span style={{ fontSize: '0.76rem', color: 'var(--color-text-muted)' }}>{report.category}</span>
+                        </div>
+                        <div className="nq-footer-group" style={{ gap: '0.25rem' }}>
+                          <button className="btn btn-ghost btn-sm" onClick={() => copyText(report.id, JSON.stringify(report, null, 2))}>
+                            {copied === report.id ? <Check size={14} /> : <Copy size={14} />}
+                            {copied === report.id ? 'Copied' : 'Copy JSON'}
+                          </button>
+                          <button className="btn btn-ghost btn-sm" aria-pressed={isJson} onClick={() => setJsonView(prev => ({ ...prev, [report.id]: !prev[report.id] }))}>
+                            <FileJson size={14} /> {isJson ? 'Summary' : 'Document'}
+                          </button>
                         </div>
                       </div>
-                    </div>
+
+                      <Link to={`/reports/${report.id}`} className="nq-result-title">{report.title}</Link>
+                      <div className="nq-result-sub">
+                        {[report.location, report.inspector_name && `Inspector ${report.inspector_name}`, report.inspection_date].filter(Boolean).join(' · ')}
+                      </div>
+
+                      {isJson ? (
+                        <div style={{ marginTop: '0.8rem' }}><JsonViewer data={report} /></div>
+                      ) : (
+                        <>
+                          {values.length > 0 && (
+                            <div className="nq-matched">
+                              <span>Matched values</span>
+                              {values.map(v => (
+                                <code key={v.field}>{v.field.replace(/^dynamic_attributes\./, '')} = {v.values.slice(0, 3).map(formatValue).join(', ')}</code>
+                              ))}
+                            </div>
+                          )}
+
+                          {findings.length > 0 && (
+                            <div className="nq-findings">
+                              {visible.map(({ f, i, hit }) => (
+                                <div key={i} className={`nq-finding ${hit ? 'is-match' : ''}`}>
+                                  <div className="nq-finding-head">
+                                    <SeverityBadge severity={f.severity} />
+                                    <strong style={{ color: 'var(--color-text-primary)' }}>{f.category}</strong>
+                                    <span className="nq-finding-desc">{f.description}</span>
+                                    {hit && <span className="nq-match-tag">Matches</span>}
+                                  </div>
+                                  {f.issues && f.issues.length > 0 && (
+                                    <ul className="nq-issues">
+                                      {f.issues.map((iss, j) => {
+                                        const issueHit = hit && issueMatches(iss);
+                                        return (
+                                          <li key={j} className={issueHit ? 'is-match' : undefined}>
+                                            <span className="nq-issue-status">{iss.status}</span>
+                                            <span>{iss.title}</span>
+                                            {iss.code_reference && <span style={{ color: 'var(--color-text-muted)' }}>· {iss.code_reference}</span>}
+                                          </li>
+                                        );
+                                      })}
+                                    </ul>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          <div className="nq-matched" style={{ justifyContent: 'space-between' }}>
+                            <span>
+                              <Layers size={12} style={{ verticalAlign: '-2px' }} /> {findings.length} {findings.length === 1 ? 'finding' : 'findings'}
+                              {matchTotal > 0 && <> · <span className="text-gold" style={{ fontWeight: 600 }}>{matchTotal} matched</span></>}
+                              {report.dynamic_attributes && Object.keys(report.dynamic_attributes).length > 0 && (
+                                <> · telemetry: <span className="nq-path">{Object.keys(report.dynamic_attributes).join(', ')}</span></>
+                              )}
+                            </span>
+                            {findings.length > visible.length || isExpanded ? (
+                              <button className="nq-link-btn" onClick={() => setExpanded(prev => ({ ...prev, [report.id]: !prev[report.id] }))}>
+                                {isExpanded ? <>Show fewer <ChevronUp size={13} style={{ verticalAlign: '-2px' }} /></> : <>Show all {findings.length} findings <ChevronDown size={13} style={{ verticalAlign: '-2px' }} /></>}
+                              </button>
+                            ) : null}
+                          </div>
+                        </>
+                      )}
+                    </article>
                   );
                 })}
               </div>
-
-              {/* Add Condition Buttons */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <button
-                  onClick={() => handleAddCondition()}
-                  className="btn btn-secondary btn-sm"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem' }}
-                >
-                  <Plus size={14} />
-                  <span>Add Condition</span>
-                </button>
-
-                <button
-                  onClick={handleSaveCurrentQuery}
-                  className="btn btn-ghost btn-sm"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem' }}
-                >
-                  <Bookmark size={14} />
-                  <span>Save Query</span>
-                </button>
-              </div>
-            </div>
-          ) : (
-            /* RAW QUERY EDITOR MODE */
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                <span>Enter valid read-only MongoDB filter dictionary:</span>
-                <span className="badge badge-info" style={{ fontSize: '0.65rem' }}>Read-Only Filter</span>
-              </div>
-              <textarea
-                value={rawQueryText}
-                onChange={e => setRawQueryText(e.target.value)}
-                rows={9}
-                className="form-control"
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '0.8rem',
-                  backgroundColor: '#0a1733',
-                  color: '#6b93ea',
-                  lineHeight: 1.45,
-                  padding: '0.75rem'
-                }}
-              />
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.72rem', color: queryValidation.isValid ? '#22a06b' : '#d04545' }}>
-                  {queryValidation.message}
-                </span>
-                <button
-                  onClick={handleSaveCurrentQuery}
-                  className="btn btn-ghost btn-sm"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem' }}
-                >
-                  <Bookmark size={14} />
-                  <span>Save Raw Query</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-        </div>
-
-        {/* RIGHT COLUMN: GENERATED MONGODB QUERY & MECHANICS */}
-        <div className="card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.75rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Terminal size={17} color="var(--color-primary)" />
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0 }}>Generated MongoDB / DocumentDB Query</h3>
-            </div>
-
-            {/* Copy button */}
-            <button
-              onClick={handleCopyQuery}
-              className="btn btn-secondary btn-sm"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem' }}
-            >
-              {copiedQuery ? <Check size={14} color="#22a06b" /> : <Copy size={14} />}
-              <span>{copiedQuery ? 'Copied' : 'Copy Query'}</span>
-            </button>
-          </div>
-
-          {/* Dark Syntax Query Box */}
-          <div style={{
-            backgroundColor: '#0a1733',
-            color: '#f5f7fa',
-            borderRadius: 'var(--radius-md)',
-            padding: '1rem',
-            fontFamily: 'var(--font-mono)',
-            fontSize: '0.8rem',
-            overflowX: 'auto',
-            border: '1px solid #36415a'
-          }}>
-            <div style={{ color: '#8e97ac', marginBottom: '0.35rem' }}>// Target: inspection_reports</div>
-            <span style={{ color: '#d8b860' }}>db.inspection_reports.find</span>(
-            <pre style={{ margin: '0.2rem 0 0 1rem', color: '#6b93ea' }}>
-              {queryMode === 'visual'
-                ? JSON.stringify(generatedMongoQuery, null, 2)
-                : rawQueryText}
-            </pre>
-            );
-          </div>
-
-          {/* Query Metadata Badges */}
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', fontSize: '0.72rem' }}>
-            <span className="badge badge-primary">Collection: inspection_reports</span>
-            <span className="badge badge-secondary">Operation: find</span>
-            <span className="badge badge-info">
-              {queryMode === 'visual' && JSON.stringify(generatedMongoQuery).includes('$elemMatch') ? '$elemMatch Enabled' : 'Dot Notation'}
-            </span>
-          </div>
-
-          {/* 8. "HOW THIS QUERY WORKS" EXPLANATION */}
-          <div style={{ padding: '0.85rem', backgroundColor: 'var(--color-bg-surface-secondary)', borderRadius: 'var(--radius-md)', fontSize: '0.8rem' }}>
-            <div style={{ fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <Info size={15} color="var(--color-primary)" />
-              <span>How this query works</span>
-            </div>
-            <p style={{ margin: 0, color: 'var(--color-text-secondary)', lineHeight: 1.45 }}>
-              {JSON.stringify(generatedMongoQuery).includes('$elemMatch')
-                ? 'This query uses the "$elemMatch" array operator. $elemMatch ensures that all specified conditions apply to the same individual finding or issue subdocument, preventing false positive cross-element matches.'
-                : 'This query searches the collection using Amazon DocumentDB dot notation traversal to evaluate nested fields across root, object, and array structures.'}
-            </p>
-
-            {/* Explain with Gemini button */}
-            <div style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
-              <button
-                onClick={handleExplainWithGemini}
-                disabled={explainingAi}
-                className="btn btn-ghost btn-sm"
-                style={{ fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', color: 'var(--color-primary)' }}
-              >
-                {explainingAi ? <RefreshCw size={13} className="spin" /> : <Sparkles size={13} />}
-                <span>Explain with Gemini</span>
-              </button>
-            </div>
-          </div>
-
-          {/* AI Explanation Drawer (if loaded) */}
-          {aiExplanation && (
-            <div style={{
-              padding: '0.85rem',
-              backgroundColor: '#f0f8f4',
-              border: '1px solid #b9e2cf',
-              borderRadius: 'var(--radius-md)',
-              fontSize: '0.8rem'
-            }}>
-              <strong style={{ color: '#13623f', display: 'block', marginBottom: '0.25rem' }}>
-                Gemini Query Analysis & Indexing Advice:
-              </strong>
-              <p style={{ margin: '0 0 0.5rem 0', color: '#176b4a', lineHeight: 1.45 }}>
-                {aiExplanation.explanation}
-              </p>
-              {aiExplanation.index_recommendations.length > 0 && (
-                <div style={{ fontSize: '0.72rem', color: '#13623f', borderTop: '1px solid #e7f5ee', paddingTop: '0.35rem' }}>
-                  <strong>Recommended Index:</strong> <code>{aiExplanation.index_recommendations[0]}</code>
+            ) : hasRun ? (
+              <div className="nq-state">
+                <SearchCode size={30} style={{ color: 'var(--color-text-muted)' }} />
+                <h3>No reports match</h3>
+                <p>
+                  The filter ran against your {schema?.total_documents ?? ''} {schema?.total_documents === 1 ? 'report' : 'reports'} in {execMs.toFixed(2)} ms and found nothing.
+                  Check the values against the Fields list, or start from an example.
+                </p>
+                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginTop: '1rem', flexWrap: 'wrap' }}>
+                  <button className="btn btn-secondary btn-sm" onClick={() => setLibraryTab('fields')}><FolderTree size={14} /> Browse fields</button>
+                  <button className="btn btn-secondary btn-sm" onClick={() => setLibraryTab('examples')}><Layers size={14} /> Try an example</button>
                 </div>
-              )}
-            </div>
-          )}
-
-        </div>
-      </div>
-
-      {/* 11, 12, 13. QUERY RESULTS SECTION */}
-      <div className="card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        
-        {/* Results Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-          <div>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Database size={18} color="var(--color-primary)" />
-              <span>Query Results ({activeMatchesCount} {activeMatchesCount === 1 ? 'document' : 'documents'} matched)</span>
-            </h3>
-            {hasExecuted && (
-              <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                Evaluated in {activeExecutionTime.toFixed(2)} ms on local in-memory dataset
-              </span>
+              </div>
+            ) : (
+              <div className="nq-state">
+                <SearchCode size={30} style={{ color: 'var(--color-text-muted)' }} />
+                <h3>Run a query to see matching reports</h3>
+                <p>Pick an example on the left or build your own. Matching findings and issues are highlighted so you can see why each report was returned.</p>
+                <div className="nq-learn">
+                  {EDUCATIONAL_DOCUMENTDB_POINTS.map(pt => (
+                    <div key={pt.title} className="nq-learn-item">
+                      <strong>{pt.title}</strong>
+                      <p>{pt.content}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
-          </div>
+          </section>
         </div>
-
-        {/* RESULTS LIST */}
-        {activeMatches.length > 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-            {activeMatches.map(report => {
-              const isExpanded = !!expandedDocs[report.id];
-              const isJsonView = !!viewJsonDocs[report.id];
-
-              return (
-                <div
-                  key={report.id}
-                  style={{
-                    padding: '1rem',
-                    backgroundColor: 'var(--color-bg-surface-secondary)',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--color-border)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '0.75rem'
-                  }}
-                >
-                  {/* Card Top Row */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem' }}>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                        <code style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--color-primary)' }}>
-                          {report.id}
-                        </code>
-                        <StatusBadge status={report.status} />
-                        <SeverityBadge severity={report.overall_severity} />
-                        <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
-                          Category: <strong>{report.category}</strong>
-                        </span>
-                      </div>
-                      <h4 style={{ margin: '0.35rem 0 0 0', fontSize: '1rem', fontWeight: 700, color: 'var(--color-text-primary)' }}>
-                        {report.title}
-                      </h4>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.15rem' }}>
-                        {report.location} • Inspector: {report.inspector_name} • Date: {report.inspection_date}
-                      </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                      <button
-                        onClick={() => handleCopyDocJson(report)}
-                        className="btn btn-secondary btn-sm"
-                        style={{ fontSize: '0.72rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
-                      >
-                        {copiedDocId === report.id ? <Check size={13} color="#22a06b" /> : <Copy size={13} />}
-                        <span>{copiedDocId === report.id ? 'Copied' : 'Copy JSON'}</span>
-                      </button>
-
-                      <button
-                        onClick={() => setViewJsonDocs(prev => ({ ...prev, [report.id]: !prev[report.id] }))}
-                        className="btn btn-secondary btn-sm"
-                        style={{ fontSize: '0.72rem' }}
-                      >
-                        {isJsonView ? 'Visual View' : 'Raw JSON'}
-                      </button>
-
-                      <button
-                        onClick={() => setExpandedDocs(prev => ({ ...prev, [report.id]: !prev[report.id] }))}
-                        className="btn btn-ghost btn-sm"
-                        style={{ padding: '0.3rem' }}
-                        title="Expand document details"
-                      >
-                        {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* JSON VIEW */}
-                  {isJsonView ? (
-                    <div style={{ marginTop: '0.5rem' }}>
-                      <JsonViewer data={report} />
-                    </div>
-                  ) : (
-                    /* VISUAL FINDINGS TREE */
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.78rem' }}>
-                      <div style={{ fontWeight: 700, color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                        <Layers size={14} color="var(--color-primary)" />
-                        <span>Nested Findings Array ({report.findings.length} findings)</span>
-                      </div>
-
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', paddingLeft: '0.75rem', borderLeft: '2px solid var(--color-border)' }}>
-                        {report.findings.slice(0, isExpanded ? 20 : 2).map((f, fIdx) => (
-                          <div key={fIdx} style={{ padding: '0.45rem 0.65rem', backgroundColor: 'var(--color-bg-surface)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-border)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                              <SeverityBadge severity={f.severity} />
-                              <strong style={{ color: 'var(--color-text-primary)' }}>{f.category}</strong>
-                              <span style={{ color: 'var(--color-text-secondary)' }}>— {f.description}</span>
-                            </div>
-
-                            {/* Sub-issues */}
-                            {f.issues && f.issues.length > 0 && (
-                              <div style={{ marginTop: '0.35rem', paddingLeft: '0.75rem', borderLeft: '1.5px solid #c3c9d6', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                                {f.issues.map((iss, iIdx) => (
-                                  <div key={iIdx} style={{ fontSize: '0.72rem', color: 'var(--color-text-secondary)' }}>
-                                    • Issue: <strong>{iss.title}</strong> (Status: <code>{iss.status}</code>{iss.code_reference ? `, Ref: ${iss.code_reference}` : ''})
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-
-                        {!isExpanded && report.findings.length > 2 && (
-                          <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
-                            + {report.findings.length - 2} more findings (click expand to view all)
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Dynamic attributes preview if present */}
-                      {report.dynamic_attributes && Object.keys(report.dynamic_attributes).length > 0 && (
-                        <div style={{ marginTop: '0.35rem', fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
-                          <span>Variable Schema Telemetry: </span>
-                          <code style={{ color: 'var(--color-primary)' }}>
-                            {Object.keys(report.dynamic_attributes).join(', ')}
-                          </code>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        ) : hasExecuted ? (
-          /* 13. ZERO-RESULT STATE */
-          <div style={{ padding: '2.5rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.65rem' }}>
-            <div style={{ width: 48, height: 48, borderRadius: '50%', backgroundColor: '#fbf4e2', color: '#a9801e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <AlertTriangle size={24} />
-            </div>
-            <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: 'var(--color-text-primary)' }}>
-              No Matching Documents Found
-            </h4>
-            <p style={{ margin: 0, maxWidth: '480px', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
-              Evaluated {conditions.length} condition(s) across {schemaOverview?.total_documents ?? 0} inspection document(s) in {activeExecutionTime.toFixed(2)}ms with 0 matches.
-            </p>
-            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-              <button
-                onClick={() => handleSelectPreset(QUERY_PRESETS[0])}
-                className="btn btn-secondary btn-sm"
-                style={{ fontSize: '0.75rem' }}
-              >
-                Try &quot;High Severity Findings&quot; Preset
-              </button>
-              <button
-                onClick={() => setShowSchemaTree(true)}
-                className="btn btn-primary btn-sm"
-                style={{ fontSize: '0.75rem' }}
-              >
-                Explore Available Fields
-              </button>
-            </div>
-          </div>
-        ) : (
-          /* INITIAL EMPTY STATE */
-          <div style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
-            <SearchCode size={36} style={{ margin: '0 auto 0.5rem auto', opacity: 0.5 }} />
-            <p style={{ margin: 0, fontSize: '0.9rem' }}>Configure conditions above or pick a preset to execute queries.</p>
-            <span style={{ fontSize: '0.75rem' }}>Supports deep nested object dot-notation and multi-condition $elemMatch arrays.</span>
-          </div>
-        )}
-
       </div>
 
+      {toast && <div className="nq-toast" role="status"><Check size={15} /> {toast}</div>}
     </div>
   );
 };
