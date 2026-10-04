@@ -2,6 +2,7 @@
 
 React 19 + TypeScript + Vite frontend for **InspectDB**, an inspection report management system built on Amazon DocumentDB. The API, infrastructure, and full project documentation live in [suchir7/InspectDB-Backend](https://github.com/suchir7/InspectDB-Backend).
 
+
 ## Local development
 
 ```bash
