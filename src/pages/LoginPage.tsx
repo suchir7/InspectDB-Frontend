@@ -221,7 +221,7 @@ export const LoginPage: React.FC = () => {
               </div>
             </div>
             <div className="modal-body" style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
-              In Phase 1, password hashes are secured with bcrypt in <strong>Neon PostgreSQL</strong>. Self-service email reset will be connected to AWS SES in Phase 2. Please contact your system administrator to update credentials.
+              Passwords are stored as bcrypt hashes in <strong>Neon PostgreSQL</strong>. Self-service email reset is not available yet; please contact your system administrator to update your credentials.
             </div>
             <div className="modal-footer">
               <button

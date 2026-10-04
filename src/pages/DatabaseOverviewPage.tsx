@@ -15,8 +15,10 @@ import {
   GitBranch
 } from 'lucide-react';
 import { DemoBanner } from '../components/common/DemoBanner';
+import { useDocumentStore } from '../services/storageStatus';
 
 export const DatabaseOverviewPage: React.FC = () => {
+  const store = useDocumentStore();
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '1100px', margin: '0 auto' }}>
       <DemoBanner message="College Project Architecture Overview: Complete specification for Amazon DocumentDB deployment, document modeling, compatibility analysis, and AWS cost minimization strategies." />
@@ -77,14 +79,14 @@ export const DatabaseOverviewPage: React.FC = () => {
             gap: '0.4rem',
             fontSize: '0.95rem',
             fontWeight: 800,
-            color: '#a9801e',
+            color: store.connected ? 'var(--color-success-text)' : 'var(--gold-700)',
             marginTop: '0.25rem'
           }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#c9a23a' }} />
-            Not Configured (Phase 1)
+            <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: store.connected ? 'var(--color-success)' : 'var(--gold-500)' }} />
+            {store.isDocumentDb ? (store.connected ? 'Connected' : 'Paused / unreachable') : 'Not connected'}
           </div>
           <div style={{ fontSize: '0.75rem', color: '#67718a', marginTop: '0.25rem' }}>
-            Running in Local Development
+            {store.label}
           </div>
         </div>
       </div>
@@ -164,10 +166,10 @@ export const DatabaseOverviewPage: React.FC = () => {
             <p style={{ fontSize: '0.825rem', lineHeight: '1.5', color: 'var(--color-text-secondary)' }}>
               Amazon DocumentDB does not have a perpetual free tier. To keep college project costs near $0:
               <ul style={{ paddingLeft: '1.2rem', marginTop: '0.35rem', fontSize: '0.78rem' }}>
-                <li><strong>Phase 1:</strong> Use zero-cost local in-memory simulation for all UI and query validation.</li>
-                <li><strong>Phase 2 Development:</strong> Deploy a single <code>db.t3.medium</code> instance (approx $0.078/hr) in a single AZ.</li>
-                <li><strong>Automated Stop:</strong> Schedule AWS Lambda / EventBridge to stop instances outside college testing hours.</li>
-                <li><strong>Billing Alarms:</strong> Configure AWS Budgets with $5.00 threshold alerts.</li>
+                <li><strong>Local development:</strong> the in-memory store or a local MongoDB, with no cluster charges.</li>
+                <li><strong>Production:</strong> a single <code>db.t3.medium</code> instance ($0.078/hr list price) in one Availability Zone.</li>
+                <li><strong>Automated stop:</strong> EventBridge Scheduler starts the cluster at 09:00 and stops it at 21:00 IST on weekdays.</li>
+                <li><strong>Live tracking:</strong> the Cost Monitoring page reads actual spend from Cost Explorer and compares it with your budget.</li>
               </ul>
             </p>
           </div>

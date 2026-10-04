@@ -2,17 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation, Link } from 'react-router-dom';
 import { TopNavbar } from '../components/layout/TopNavbar';
 import { api } from '../services/api';
+import { AiServiceStatus, HealthStatus } from '../types';
 import { ChevronRight, Home, Sparkles, Database, ShieldCheck } from 'lucide-react';
 
 export const MainLayout: React.FC = () => {
   const [backendOnline, setBackendOnline] = useState(true);
+  const [health, setHealth] = useState<HealthStatus | null>(null);
+  const [aiStatus, setAiStatus] = useState<AiServiceStatus | null>(null);
   const location = useLocation();
+
+  useEffect(() => {
+    api.getAiStatus().then(setAiStatus).catch(() => setAiStatus(null));
+  }, []);
 
   // Check health periodically
   useEffect(() => {
     const checkBackend = async () => {
       try {
-        await api.getHealth();
+        setHealth(await api.getHealth());
         setBackendOnline(true);
       } catch (err) {
         setBackendOnline(false);
@@ -46,7 +53,7 @@ export const MainLayout: React.FC = () => {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--color-bg-app)' }}>
       {/* High-End Top Navigation Bar */}
-      <TopNavbar backendOnline={backendOnline} />
+      <TopNavbar backendOnline={backendOnline} health={health} aiStatus={aiStatus} />
 
       {/* Secondary Context & Breadcrumb Bar */}
       <div
@@ -97,12 +104,16 @@ export const MainLayout: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }} className="subheader-quick-stats">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#4e5871', fontSize: '0.75rem' }}>
             <Sparkles size={13} color="#24447f" />
-            <span>Gemini AI Engine: <strong>Active</strong></span>
+            <span>Gemini AI: <strong>{aiStatus ? (aiStatus.gemini_configured ? 'Configured' : 'Not configured') : '…'}</strong></span>
           </div>
           <div style={{ width: 1, height: 14, backgroundColor: '#dfe3ec' }} />
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#4e5871', fontSize: '0.75rem' }}>
             <Database size={13} color="#2459c9" />
-            <span>Target: <strong>Amazon DocumentDB 5.0</strong></span>
+            <span>
+              {health?.database.mode === 'documentdb' ? 'Amazon DocumentDB' : 'Target: Amazon DocumentDB'}{' '}
+              <strong>{aiStatus?.documentdb_target_version ?? '5.0'}</strong>
+              {health?.database.mode === 'documentdb' && <> · <strong>{health.database.connected ? 'connected' : 'paused'}</strong></>}
+            </span>
           </div>
         </div>
       </div>

@@ -1,748 +1,369 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
-  Calculator,
-  Sparkles,
-  TrendingDown,
-  Server,
-  Database,
-  Clock,
-  HardDrive,
-  Activity,
-  Layers,
-  Globe,
-  AlertTriangle,
-  CheckCircle2,
-  XCircle,
-  HelpCircle,
-  ArrowRight,
-  RefreshCw,
-  History,
-  Trash2,
-  ChevronDown,
-  ChevronUp,
-  DollarSign,
-  ShieldAlert,
-  Zap,
-  Sliders,
-  Check,
-  Info,
-  Flame,
-  FileSpreadsheet,
-  Laptop,
-  GraduationCap,
-  Code,
-  Building,
-  Bell,
-  Gauge,
-  SlidersHorizontal,
-  Compass,
-  ArrowUpDown,
-  CheckCircle,
-  ShieldCheck,
-  Lock,
-  GitBranch
+  AlertTriangle, CheckCircle2, CircleDashed, Info, Lightbulb, Loader2, MinusCircle, RefreshCw, Sparkles
 } from 'lucide-react';
 import { api } from '../services/api';
+import { CostAnalysisResult, LiveCostOverview, LiveRecommendationStatus } from '../types';
+import { LiveDataNotice } from '../components/cost/LiveDataNotice';
+import { ScenarioBars } from '../components/cost/ScenarioBars';
 import {
-  WorkloadInput,
-  CostEstimateResponse,
-  CostAnalysisResult,
-  Recommendation,
-  DeploymentOptionEstimate,
-  CostHealth
-} from '../types';
-import {
-  DOCUMENTDB_PRICING,
-  REGIONS,
-  WORKLOAD_PRESETS,
-  UPTIME_PRESETS,
-  CALCULATION_FORMULAS,
-  WorkloadPreset
-} from '../services/pricingConfig';
+  HOURS_PER_MONTH, WEEKS_PER_MONTH, formatSmallUsd, formatUsd, modelMonthlyCost, pricedInstanceClasses, workloadFromLive
+} from '../services/costModel';
+
+const STATUS_META: Record<LiveRecommendationStatus, { label: string; badge: string; icon: React.ReactNode }> = {
+  applied: { label: 'Applied', badge: 'badge-success', icon: <CheckCircle2 size={12} /> },
+  recommended: { label: 'Recommended', badge: 'badge-gold', icon: <Lightbulb size={12} /> },
+  optional: { label: 'Optional', badge: 'badge-info', icon: <CircleDashed size={12} /> },
+  not_needed: { label: 'Not needed', badge: 'badge-neutral', icon: <MinusCircle size={12} /> },
+  warning: { label: 'Needs attention', badge: 'badge-danger', icon: <AlertTriangle size={12} /> }
+};
+
+const SOURCE_CHIP: React.CSSProperties = {
+  fontSize: '0.66rem', fontWeight: 600, padding: '0.1rem 0.45rem', borderRadius: 999,
+  background: 'var(--color-bg-surface-secondary)', color: 'var(--color-text-muted)', border: '1px solid var(--color-border)', whiteSpace: 'nowrap'
+};
+
+const HOUR_PRESETS = [
+  { id: 'current', label: 'Current schedule' },
+  { id: 'always_on', label: 'Always on (730 h)', hours: HOURS_PER_MONTH },
+  { id: 'weekdays_12h', label: 'Weekdays 09:00–21:00', hours: Math.round(12 * 5 * WEEKS_PER_MONTH * 10) / 10 },
+  { id: 'weekdays_8h', label: 'Weekdays, 8 h a day', hours: Math.round(8 * 5 * WEEKS_PER_MONTH * 10) / 10 },
+  { id: 'demo_only', label: 'Demo days only (3 × 4 h a week)', hours: Math.round(12 * WEEKS_PER_MONTH * 10) / 10 },
+  { id: 'custom', label: 'Custom hours' }
+];
+
+const Row: React.FC<{ label: string; value: React.ReactNode; source: string }> = ({ label, value, source }) => (
+  <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr auto', gap: '0.75rem', alignItems: 'center', padding: '0.6rem 0', borderBottom: '1px solid var(--color-border-subtle)' }}>
+    <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>{label}</div>
+    <div style={{ fontSize: '0.86rem', fontWeight: 550 }}>{value}</div>
+    <span style={SOURCE_CHIP}>{source}</span>
+  </div>
+);
 
 export const CostOptimizerPage: React.FC = () => {
-  const navigate = useNavigate();
+  const [overview, setOverview] = useState<LiveCostOverview | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  // Primary Workload State
-  const [selectedPresetId, setSelectedPresetId] = useState<string>('dev_environment');
-  const [workload, setWorkload] = useState<WorkloadInput>(WORKLOAD_PRESETS[2].workload);
+  // What-if planner
+  const [planClass, setPlanClass] = useState<string>('');
+  const [planCount, setPlanCount] = useState<number>(1);
+  const [planPreset, setPlanPreset] = useState<string>('current');
+  const [customHours, setCustomHours] = useState<string>('120');
+  const [planStorage, setPlanStorage] = useState<string>('standard');
 
-  // API State
-  const [estimate, setEstimate] = useState<CostEstimateResponse | null>(null);
-  const [analysis, setAnalysis] = useState<CostAnalysisResult | null>(null);
-  const [history, setHistory] = useState<CostAnalysisResult[]>([]);
-  const [loadingEstimate, setLoadingEstimate] = useState<boolean>(false);
-  const [analyzingAi, setAnalyzingAi] = useState<boolean>(false);
-  const [analysisStage, setAnalysisStage] = useState<number>(0);
-  const [errorBanner, setErrorBanner] = useState<string | null>(null);
-  const [successBanner, setSuccessBanner] = useState<string | null>(null);
+  // Gemini advisor
+  const [advice, setAdvice] = useState<CostAnalysisResult | null>(null);
+  const [advising, setAdvising] = useState(false);
+  const [adviceError, setAdviceError] = useState<string | null>(null);
 
-  // UI Interactive State
-  const [activeTab, setActiveTab] = useState<'estimator' | 'ai-advisor' | 'matrix' | 'simulator' | 'history'>('estimator');
-  const [showWhyScore, setShowWhyScore] = useState<boolean>(false);
-  const [showPricingAssumptions, setShowPricingAssumptions] = useState<boolean>(false);
-  const [expandedRecs, setExpandedRecs] = useState<Record<string, boolean>>({});
-
-  // Helper currency formatter
-  const fmt = (amount: number | undefined | null) => {
-    if (amount === undefined || amount === null || isNaN(amount)) return '$0.00';
-    return `$${amount.toFixed(2)}`;
-  };
-
-  // Fetch deterministic estimate whenever workload changes
-  const fetchEstimate = useCallback(async (currentWorkload: WorkloadInput) => {
-    setLoadingEstimate(true);
+  const load = useCallback(async (refresh = false) => {
+    refresh ? setRefreshing(true) : setLoading(true);
     try {
-      const res = await api.calculateCostEstimate(currentWorkload);
-      setEstimate(res);
-      setErrorBanner(null);
-    } catch (err: any) {
-      console.error('Failed to calculate estimate:', err);
-      setErrorBanner(err.message || 'Failed to calculate deterministic cost estimate.');
-    } finally {
-      setLoadingEstimate(false);
-    }
-  }, []);
-
-  // Fetch history snapshots
-  const fetchHistory = useCallback(async () => {
-    try {
-      const hist = await api.getCostAnalysisHistory();
-      setHistory(hist);
-    } catch (err) {
-      console.error('Failed to load cost history:', err);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchEstimate(workload);
-  }, [workload, fetchEstimate]);
-
-  useEffect(() => {
-    fetchHistory();
-  }, [fetchHistory]);
-
-  // Handle Preset Selection
-  const handleSelectPreset = (preset: WorkloadPreset) => {
-    setSelectedPresetId(preset.id);
-    setWorkload(preset.workload);
-    setSuccessBanner(`Applied '${preset.name}' workload preset.`);
-    setTimeout(() => setSuccessBanner(null), 3000);
-  };
-
-  // Handle Custom Input Changes
-  const handleInputChange = (field: keyof WorkloadInput, value: any) => {
-    setSelectedPresetId('custom');
-    setWorkload(prev => ({ ...prev, [field]: value }));
-  };
-
-  // Run AI Advisor Analysis
-  const handleRunAiAnalysis = async (forceRefresh = false) => {
-    setAnalyzingAi(true);
-    setErrorBanner(null);
-    setAnalysisStage(1);
-
-    const stageTimer1 = setTimeout(() => setAnalysisStage(2), 700);
-    const stageTimer2 = setTimeout(() => setAnalysisStage(3), 1400);
-
-    try {
-      const result = await api.analyzeCostAndDeployment({
-        workload,
-        force_refresh: forceRefresh
-      });
-      setAnalysis(result);
-      fetchHistory();
-      setActiveTab('ai-advisor');
-      setSuccessBanner('Gemini 2.5 Flash architectural analysis completed.');
-      setTimeout(() => setSuccessBanner(null), 3000);
-    } catch (err: any) {
-      console.error('AI Cost Advisor Error:', err);
-      setErrorBanner(err.message || 'Gemini AI advisor encountered an error. Showing deterministic optimization guidance.');
-    } finally {
-      clearTimeout(stageTimer1);
-      clearTimeout(stageTimer2);
-      setAnalyzingAi(false);
-      setAnalysisStage(0);
-    }
-  };
-
-  // Update Recommendation Status
-  const handleUpdateStatus = async (recId: string, newStatus: 'pending' | 'applied' | 'dismissed') => {
-    try {
-      await api.updateRecommendationStatus(recId, newStatus);
-      if (analysis) {
-        setAnalysis(prev => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            recommendations: prev.recommendations.map(r => r.id === recId ? { ...r, status: newStatus } : r)
-          };
-        });
+      const data = await api.getLiveCostOverview(refresh);
+      setOverview(data);
+      setLoadError(null);
+      if (data.profile) {
+        setPlanClass(prev => prev || data.profile!.instance_class || 'db.t3.medium');
+        setPlanCount(data.profile.instance_count || 1);
+        setPlanStorage(data.profile.storage_type);
       }
-      fetchHistory();
     } catch (err) {
-      console.error('Failed to update recommendation status:', err);
+      setLoadError(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const profile = overview?.profile ?? null;
+  const rates = overview?.rates ?? null;
+  const model = overview?.model ?? null;
+  const cluster = overview?.sections.cluster?.data ?? null;
+  const schedule = overview?.sections.schedule?.data ?? null;
+  const metrics = overview?.sections.metrics?.data ?? null;
+  const costs = overview?.sections.costs?.data ?? null;
+  const recommendations = overview?.recommendations ?? [];
+
+  const applied = recommendations.filter(r => r.status === 'applied').reduce((sum, r) => sum + r.monthly_savings, 0);
+  const possible = recommendations.filter(r => r.status === 'recommended' || r.status === 'optional').reduce((sum, r) => sum + r.monthly_savings, 0);
+
+  const planHours = useMemo(() => {
+    if (!profile) return 0;
+    const preset = HOUR_PRESETS.find(p => p.id === planPreset);
+    if (planPreset === 'current') return profile.monthly_hours;
+    if (planPreset === 'custom') return Math.min(Math.max(Number(customHours) || 0, 0), HOURS_PER_MONTH);
+    return preset?.hours ?? profile.monthly_hours;
+  }, [profile, planPreset, customHours]);
+
+  const plan = useMemo(() => profile && rates
+    ? modelMonthlyCost(profile, rates, { instanceClass: planClass, instanceCount: planCount, monthlyHours: planHours, storageType: planStorage })
+    : null, [profile, rates, planClass, planCount, planHours, planStorage]);
+
+  // Compare at cent precision so an unchanged plan reads "No change" rather than −$0.00
+  const planDelta = plan && model ? Math.round(plan.total * 100) / 100 - model.monthly_total : 0;
+  const planUnchanged = Math.abs(planDelta) < 0.005;
+
+  const instanceOptions = useMemo(() => rates ? pricedInstanceClasses(rates, planStorage).slice(0, 10) : [], [rates, planStorage]);
+
+  const getAdvice = async () => {
+    if (!profile) return;
+    setAdvising(true);
+    setAdviceError(null);
+    try {
+      setAdvice(await api.analyzeCostAndDeployment({ workload: workloadFromLive(profile, metrics), force_refresh: true }));
+    } catch (err) {
+      setAdviceError(err instanceof Error ? err.message : 'Advisor request failed');
+    } finally {
+      setAdvising(false);
     }
   };
-
-  // Calculate Explainable Cost Optimization Score (0-100)
-  const calculateScoreDetails = useMemo(() => {
-    const isScheduled = workload.monthly_uptime_hours <= 200;
-    const isLocal = workload.monthly_uptime_hours === 0;
-    
-    // 1. Compute Scheduling Score (Weight: 40%)
-    let computeScore = 40;
-    if (workload.monthly_uptime_hours > 500 && workload.requests_per_day < 50000) {
-      computeScore = 10; // High penalty for 24/7 idle development instances
-    } else if (isScheduled) {
-      computeScore = 38;
-    } else if (isLocal) {
-      computeScore = 40;
-    } else {
-      computeScore = 25;
-    }
-
-    // 2. Workload-to-Instance Ratio (Weight: 25%)
-    let sizingScore = 25;
-    if (workload.requests_per_day <= 10000 && workload.selected_deployment.includes('multi_az')) {
-      sizingScore = 8;
-    } else if (workload.requests_per_day <= 20000) {
-      sizingScore = 23;
-    }
-
-    // 3. Storage Allocation Efficiency (Weight: 20%)
-    let storageScore = 20;
-    if (workload.data_storage_gb > 50 && workload.requests_per_day < 1000) {
-      storageScore = 10;
-    }
-
-    // 4. Backup Retention Policy (Weight: 15%)
-    let backupScore = 15;
-    if (workload.backup_retention_days > 14) {
-      backupScore = 8;
-    }
-
-    const totalScore = computeScore + sizingScore + storageScore + backupScore;
-
-    return {
-      totalScore,
-      computeScore,
-      sizingScore,
-      storageScore,
-      backupScore,
-      isUnderutilized: workload.monthly_uptime_hours >= 400 && workload.requests_per_day <= 50000
-    };
-  }, [workload]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Top Navigation Strip */}
-      <div style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0.75rem 1.25rem',
-        borderRadius: 'var(--radius-lg)',
-        backgroundColor: '#0a1733',
-        border: '1px solid #36415a',
-        color: '#f5f7fa',
-        fontSize: '0.825rem',
-        gap: '0.75rem'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-          <Link
-            to="/cost-monitoring"
-            style={{
-              color: '#6b93ea',
-              fontWeight: 600,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.35rem',
-              textDecoration: 'none'
-            }}
-          >
-            <span>← Back to Cost Monitoring Dashboard</span>
-          </Link>
-          <span style={{ color: '#4e5871' }}>|</span>
-          <span style={{ color: '#8e97ac' }}>Target Bottleneck:</span>
-          <strong style={{ color: '#f5f7fa' }}>Small Workload vs. High Cluster Baseline Cost</strong>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '1rem', flexWrap: 'wrap' }}>
+        <div>
+          <div className="eyebrow">Cost optimizer</div>
+          <h2 style={{ marginTop: '0.2rem' }}>Cost Optimizer</h2>
+          <p style={{ fontSize: '0.9rem', marginTop: '0.25rem', maxWidth: 760 }}>
+            Your live DocumentDB configuration, a monthly cost model built on AWS list prices and your real usage,
+            and recommendations backed by that data.
+          </p>
         </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          <button
-            onClick={() => handleRunAiAnalysis(true)}
-            disabled={analyzingAi}
-            className="btn btn-primary btn-sm"
-            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem' }}
-          >
-            <Sparkles size={13} />
-            <span>{analyzingAi ? 'Running Gemini Analysis...' : 'Evaluate with Gemini 2.5 Flash'}</span>
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <Link to="/cost-monitoring" className="btn btn-secondary btn-sm">Open Cost Monitoring</Link>
+          <button className="btn btn-primary btn-sm" onClick={() => load(true)} disabled={refreshing || loading}>
+            <RefreshCw size={14} className={refreshing ? 'spin' : undefined} /> Refresh
           </button>
         </div>
       </div>
 
-      {/* Header */}
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--color-text-primary)' }}>
-            Amazon DocumentDB Cost Optimizer & Advisor
-          </h2>
-          <span style={{
-            fontSize: '0.72rem',
-            fontWeight: 700,
-            padding: '0.2rem 0.6rem',
-            borderRadius: 'var(--radius-full)',
-            backgroundColor: '#fcf8ed',
-            color: '#a9801e',
-            border: '1px solid #f0e2b8',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.3rem'
-          }}>
-            <Sparkles size={11} /> Gemini 2.5 Flash Powered
-          </span>
-        </div>
-        <p style={{ fontSize: '0.875rem', marginTop: '0.25rem', color: 'var(--color-text-secondary)' }}>
-          Analyze DocumentDB workload and identify potential cost-optimization opportunities for low-workload environments.
-        </p>
-      </div>
-
-      {errorBanner && (
-        <div className="alert alert-danger">
-          <div>{errorBanner}</div>
+      {loading && (
+        <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--color-text-muted)' }}>
+          <Loader2 size={18} className="spin" /> Loading live AWS data…
         </div>
       )}
 
-      {successBanner && (
-        <div className="alert alert-success">
-          <div>{successBanner}</div>
-        </div>
-      )}
+      <LiveDataNotice overview={overview} loadError={loadError} />
 
-      {/* TOP: Optimization Status & Score Summary */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-        gap: '1rem'
-      }}>
-        {/* Status Card 1: Workload Intensity */}
-        <div className="card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div>
-            <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>
-              Current Workload Intensity
-            </div>
-            <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#2459c9', marginTop: '0.25rem' }}>
-              Low Workload
-            </div>
-            <p style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)', marginTop: '0.35rem', lineHeight: 1.4 }}>
-              Development inspection reports & periodic testing ({workload.requests_per_day.toLocaleString()} req/day). Minimum cluster provision is sufficient.
-            </p>
-          </div>
-          <div style={{ marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid var(--color-border)', fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
-            Diagnosis: <strong>Idle Compute Optimization Candidate</strong>
-          </div>
-        </div>
-
-        {/* Status Card 2: Optimization Opportunities Detected */}
-        <div className="card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div>
-            <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>
-              Optimization Status
-            </div>
-            <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#1e8e62', marginTop: '0.25rem' }}>
-              3 Opportunities Detected
-            </div>
-            <p style={{ fontSize: '0.78rem', color: '#13623f', marginTop: '0.35rem', lineHeight: 1.4 }}>
-              Potential savings up to <strong>~$44.46/mo (~76% reduction)</strong> via scheduled auto-stop and right-sizing.
-            </p>
-          </div>
-          <div style={{ marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid var(--color-border)', fontSize: '0.72rem', color: '#1e8e62', fontWeight: 600 }}>
-            ✓ Evidence-Based Rate Card Verification
-          </div>
-        </div>
-
-        {/* Status Card 3: Explainable Health Score */}
-        <div className="card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>
-                Architecture Health Score
-              </div>
-              <button
-                onClick={() => setShowWhyScore(!showWhyScore)}
-                style={{ background: 'none', border: 'none', color: 'var(--color-primary)', fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer' }}
-              >
-                {showWhyScore ? 'Hide Details' : 'Why this score?'}
-              </button>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginTop: '0.25rem' }}>
-              <span style={{ fontSize: '2.15rem', fontWeight: 600, fontFamily: 'var(--font-display)', letterSpacing: '-0.01em', color: calculateScoreDetails.totalScore >= 75 ? '#1e8e62' : calculateScoreDetails.totalScore >= 50 ? '#a9801e' : '#c23b3b' }}>
-                {calculateScoreDetails.totalScore}/100
-              </span>
-              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-secondary)' }}>
-                {calculateScoreDetails.totalScore >= 75 ? 'Highly Optimized' : calculateScoreDetails.totalScore >= 50 ? 'Moderate Efficiency' : 'High Waste Risk'}
-              </span>
-            </div>
-            <div style={{ width: '100%', height: 6, backgroundColor: 'var(--color-bg-surface-secondary)', borderRadius: '9999px', overflow: 'hidden', marginTop: '0.5rem' }}>
-              <div style={{
-                width: `${calculateScoreDetails.totalScore}%`,
-                height: '100%',
-                backgroundColor: calculateScoreDetails.totalScore >= 75 ? '#22a06b' : calculateScoreDetails.totalScore >= 50 ? '#c9a23a' : '#d04545',
-                transition: 'width 0.4s ease'
-              }} />
-            </div>
-          </div>
-
-          {/* Expandable Why This Score Breakdown */}
-          {showWhyScore && (
-            <div style={{ marginTop: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid var(--color-border)', fontSize: '0.72rem', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Compute Scheduling (40 pts):</span>
-                <strong>{calculateScoreDetails.computeScore}/40</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Workload Sizing Ratio (25 pts):</span>
-                <strong>{calculateScoreDetails.sizingScore}/25</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Storage Allocation (20 pts):</span>
-                <strong>{calculateScoreDetails.storageScore}/20</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Backup Policy (15 pts):</span>
-                <strong>{calculateScoreDetails.backupScore}/15</strong>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Visual Governance Workflow: How InspectDB Optimizes */}
-      <div className="card" style={{ padding: '1.25rem', backgroundColor: '#f5f7fa' }}>
-        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
-          Cost Optimization Governance & Recommendation Workflow
-        </div>
-
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '0.5rem',
-          padding: '0.75rem',
-          backgroundColor: '#ffffff',
-          borderRadius: 'var(--radius-md)',
-          border: '1px solid var(--color-border)',
-          fontSize: '0.75rem',
-          fontWeight: 600
-        }}>
-          <span style={{ padding: '0.35rem 0.6rem', borderRadius: '4px', backgroundColor: '#eceff5', color: '#36415a' }}>1. Workload Input / CloudWatch</span>
-          <span style={{ color: '#8e97ac' }}>➔</span>
-          <span style={{ padding: '0.35rem 0.6rem', borderRadius: '4px', backgroundColor: '#eceff5', color: '#36415a' }}>2. Workload Analysis</span>
-          <span style={{ color: '#8e97ac' }}>➔</span>
-          <span style={{ padding: '0.35rem 0.6rem', borderRadius: '4px', backgroundColor: '#eceff5', color: '#36415a' }}>3. Cost Rate Card Modeling</span>
-          <span style={{ color: '#8e97ac' }}>➔</span>
-          <span style={{ padding: '0.35rem 0.6rem', borderRadius: '4px', backgroundColor: '#fbf4e2', color: '#7a5a12' }}>4. Underutilization Detection</span>
-          <span style={{ color: '#8e97ac' }}>➔</span>
-          <span style={{ padding: '0.35rem 0.6rem', borderRadius: '4px', backgroundColor: '#e9f6f0', color: '#13623f' }}>5. Evidence-Based Recs</span>
-          <span style={{ color: '#8e97ac' }}>➔</span>
-          <span style={{ padding: '0.35rem 0.6rem', borderRadius: '4px', backgroundColor: '#e6eefc', color: '#122650' }}>6. User Review & Decision</span>
-        </div>
-
-        <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.5rem', marginBottom: 0 }}>
-          🛡️ <strong>Safety Guarantee:</strong> InspectDB operates strictly in advisory & simulation mode. Changes require user review and are never automatically or destructively applied to cloud infrastructure.
-        </p>
-      </div>
-
-      {/* Structured Optimization Opportunities */}
-      <div className="card" style={{ padding: '1.25rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-          <div>
-            <h3 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <TrendingDown size={18} color="#1e8e62" />
-              Evidence-Based Optimization Opportunities
-            </h3>
-            <p style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginTop: '0.15rem' }}>
-              Actionable recommendations to eliminate unnecessary DocumentDB costs for low-volume workloads.
-            </p>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {/* Opportunity 1: Scheduled Development Instance */}
-          <div style={{
-            padding: '1.25rem',
-            borderRadius: 'var(--radius-md)',
-            backgroundColor: 'var(--color-bg-surface-secondary)',
-            border: '1px solid var(--color-border)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.75rem'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{
-                    fontSize: '0.7rem',
-                    fontWeight: 700,
-                    padding: '0.15rem 0.5rem',
-                    borderRadius: '4px',
-                    backgroundColor: '#fbeaea',
-                    color: '#c23b3b'
-                  }}>
-                    HIGH SAVINGS IMPACT
-                  </span>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>Confidence: High (Rate Card Verified)</span>
-                </div>
-                <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--color-text-primary)', marginTop: '0.35rem' }}>
-                  Automate Scheduled Start/Stop for Development Cluster
-                </h4>
-              </div>
-
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e8e62' }}>
-                  Save ~$44.46/mo
-                </div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
-                  Drops compute from $58.44/mo to $12.48/mo
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.75rem', fontSize: '0.78rem' }}>
-              <div>
-                <strong style={{ color: 'var(--color-text-primary)' }}>Issue:</strong>
-                <p style={{ color: 'var(--color-text-secondary)', marginTop: '0.15rem' }}>
-                  24/7 continuous uptime (730 hrs/mo) provisioned for an inspection workload active only during work hours.
-                </p>
-              </div>
-              <div>
-                <strong style={{ color: 'var(--color-text-primary)' }}>Evidence:</strong>
-                <p style={{ color: 'var(--color-text-secondary)', marginTop: '0.15rem' }}>
-                  Workload requires ~160 hrs/mo (8h/weekday). Nights and weekends generate 570 idle hours (~78% idle time).
-                </p>
-              </div>
-              <div>
-                <strong style={{ color: 'var(--color-text-primary)' }}>Recommended Action:</strong>
-                <p style={{ color: 'var(--color-text-secondary)', marginTop: '0.15rem' }}>
-                  Deploy AWS EventBridge rule + AWS Lambda to stop cluster at 7 PM and start at 8 AM on weekdays.
-                </p>
-              </div>
-            </div>
-
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              paddingTop: '0.5rem',
-              borderTop: '1px solid var(--color-border)',
-              flexWrap: 'wrap',
-              gap: '0.5rem'
-            }}>
-              <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
-                Data Source: AWS Pricing Rate Card & Workload Schedule Calculator
-              </span>
-              <button
-                onClick={() => handleUpdateStatus('rec-scheduled-start-stop', 'applied')}
-                className="btn btn-primary btn-sm"
-                style={{ fontSize: '0.75rem', padding: '0.3rem 0.75rem' }}
-              >
-                <span>Mark as Applied</span>
-                <Check size={13} />
-              </button>
-            </div>
-          </div>
-
-          {/* Opportunity 2: Zero-Cost Local Development */}
-          <div style={{
-            padding: '1.25rem',
-            borderRadius: 'var(--radius-md)',
-            backgroundColor: 'var(--color-bg-surface-secondary)',
-            border: '1px solid var(--color-border)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.75rem'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{
-                    fontSize: '0.7rem',
-                    fontWeight: 700,
-                    padding: '0.15rem 0.5rem',
-                    borderRadius: '4px',
-                    backgroundColor: '#e6eefc',
-                    color: '#122650'
-                  }}>
-                    PHASE 1 STRATEGY
-                  </span>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>Confidence: 100%</span>
-                </div>
-                <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--color-text-primary)', marginTop: '0.35rem' }}>
-                  Utilize In-Memory Repository During Schema Prototyping
-                </h4>
-              </div>
-
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e8e62' }}>
-                  $0.00 /mo
-                </div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
-                  100% cloud compute savings
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.75rem', fontSize: '0.78rem' }}>
-              <div>
-                <strong style={{ color: 'var(--color-text-primary)' }}>Issue:</strong>
-                <p style={{ color: 'var(--color-text-secondary)', marginTop: '0.15rem' }}>
-                  Incurring AWS cluster charges while inspection schemas and query filters are being designed.
-                </p>
-              </div>
-              <div>
-                <strong style={{ color: 'var(--color-text-primary)' }}>Evidence:</strong>
-                <p style={{ color: 'var(--color-text-secondary)', marginTop: '0.15rem' }}>
-                  InspectDB provides an in-memory repository with full $elemMatch and dot-notation semantics.
-                </p>
-              </div>
-              <div>
-                <strong style={{ color: 'var(--color-text-primary)' }}>Recommended Action:</strong>
-                <p style={{ color: 'var(--color-text-secondary)', marginTop: '0.15rem' }}>
-                  Keep <code>USE_MOCK_DB=true</code> until end-to-end cloud load testing is required.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* What-If Analysis Matrix */}
-      <div className="card" style={{ padding: '1.25rem' }}>
-        <h3 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
-          <Calculator size={18} color="var(--color-primary)" />
-          What-If Deployment Tier Sizing & Cost Matrix
-        </h3>
-        <p style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginBottom: '1.25rem' }}>
-          Compare estimated monthly costs across AWS DocumentDB deployment configurations based on your workload sizing.
-        </p>
-
-        {estimate && (
-          <div className="table-responsive">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Deployment Tier</th>
-                  <th>Configuration</th>
-                  <th>Uptime Target</th>
-                  <th>Compute Cost</th>
-                  <th>Storage & I/O</th>
-                  <th>Total Monthly Estimate</th>
-                  <th>Savings vs 24/7</th>
-                </tr>
-              </thead>
-              <tbody>
-                {estimate.comparison_options.map((opt) => {
-                  const isSelected = opt.id === workload.selected_deployment;
-                  const diffVs247 = 58.44 - opt.monthly_cost;
-                  return (
-                    <tr key={opt.id} style={{ backgroundColor: isSelected ? 'var(--color-primary-light)' : undefined }}>
-                      <td>
-                        <strong style={{ color: 'var(--color-text-primary)' }}>{opt.name}</strong>
-                        {isSelected && (
-                          <span style={{
-                            marginLeft: '0.5rem',
-                            fontSize: '0.68rem',
-                            padding: '0.1rem 0.4rem',
-                            borderRadius: '4px',
-                            backgroundColor: 'var(--color-primary)',
-                            color: '#ffffff',
-                            fontWeight: 700
-                          }}>
-                            SELECTED
-                          </span>
-                        )}
-                      </td>
-                      <td style={{ fontSize: '0.8rem' }}>
-                        <code>{opt.instance_type}</code> ({opt.node_count} node{opt.node_count > 1 ? 's' : ''})
-                      </td>
-                      <td style={{ fontSize: '0.8rem' }}>
-                        {opt.monthly_uptime_hours} hrs/mo
-                      </td>
-                      <td style={{ fontSize: '0.8rem' }}>
-                        {fmt(opt.breakdown.compute_cost)}
-                      </td>
-                      <td style={{ fontSize: '0.8rem' }}>
-                        {fmt(opt.breakdown.storage_cost + opt.breakdown.io_cost + opt.breakdown.backup_cost)}
-                      </td>
-                      <td style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--color-text-primary)' }}>
-                        {fmt(opt.monthly_cost)}
-                      </td>
-                      <td style={{ fontSize: '0.8rem', fontWeight: 700, color: diffVs247 > 0 ? '#1e8e62' : '#67718a' }}>
-                        {diffVs247 > 0 ? `+${fmt(diffVs247)}/mo` : 'Baseline'}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Gemini AI Custom Advisor Findings */}
-      {analysis && (
-        <div className="card" style={{ padding: '1.25rem', borderLeft: '4px solid #c9a23a' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Sparkles size={18} color="#c9a23a" />
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0 }}>
-                Gemini 2.5 Flash Deployment Assessment
-              </h3>
-            </div>
-            <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
-              Analysis ID: {analysis.analysis_id}
-            </span>
-          </div>
-
-          <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', lineHeight: 1.6, marginBottom: '1rem' }}>
-            {analysis.gemini_summary}
-          </p>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.75rem' }}>
-            {analysis.recommendations?.map((rec) => (
-              <div key={rec.id} style={{
-                padding: '0.85rem',
-                borderRadius: 'var(--radius-md)',
-                backgroundColor: 'var(--color-bg-surface-secondary)',
-                border: '1px solid var(--color-border)',
-                fontSize: '0.78rem'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-                  <span style={{ fontWeight: 700, color: 'var(--color-text-primary)' }}>{rec.title}</span>
-                  <span style={{
-                    fontSize: '0.68rem',
-                    padding: '0.1rem 0.4rem',
-                    borderRadius: '4px',
-                    backgroundColor: rec.impact === 'high' ? '#fbeaea' : '#f3f7fe',
-                    color: rec.impact === 'high' ? '#c23b3b' : '#2459c9',
-                    fontWeight: 700
-                  }}>
-                    {rec.impact.toUpperCase()} IMPACT
-                  </span>
-                </div>
-                <p style={{ color: 'var(--color-text-secondary)', lineHeight: 1.4, margin: '0 0 0.5rem 0' }}>
-                  {rec.explanation}
-                </p>
-                <div style={{ color: '#1e8e62', fontWeight: 600 }}>
-                  Proposed Action: {rec.proposed_action}
-                </div>
+      {profile && model && cluster && (
+        <>
+          {/* Savings summary */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+            {[
+              { label: 'Modelled monthly cost', value: formatUsd(model.monthly_total), sub: `${model.monthly_hours.toFixed(0)} running hours at list prices` },
+              { label: 'Savings already in place', value: formatUsd(applied), sub: 'vs running 24/7 with this configuration' },
+              { label: 'Further possible savings', value: formatUsd(possible), sub: 'from recommended and optional changes' },
+              { label: 'Billed this month', value: costs ? formatSmallUsd(costs.documentdb_month_to_date) : '—', sub: costs ? `DocumentDB usage before credits, through ${costs.latest_cost_date ?? '—'}` : 'Cost Explorer data unavailable' }
+            ].map(t => (
+              <div key={t.label} className="card" style={{ padding: '1.1rem 1.2rem' }}>
+                <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>{t.label}</div>
+                <div className="stat-tile-value" style={{ marginTop: '0.35rem' }}>{t.value}</div>
+                <div style={{ fontSize: '0.76rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>{t.sub}</div>
               </div>
             ))}
           </div>
-        </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(440px, 1fr))', gap: '1.5rem' }}>
+            {/* Deployment */}
+            <div className="card">
+              <div className="card-header"><h3 className="card-title">Your deployment</h3><span className={`badge ${cluster.status === 'available' ? 'badge-success' : 'badge-neutral'}`}>{cluster.status}</span></div>
+              <Row label="Cluster" value={`${cluster.cluster_id} · DocumentDB ${cluster.engine_version} · ${cluster.region}`} source="DocumentDB API" />
+              <Row label="Instances" value={`${profile.instance_count} × ${profile.instance_class}`} source="DocumentDB API" />
+              <Row label="Storage" value={`${profile.storage_type === 'iopt1' ? 'I/O-Optimized' : 'Standard'} · ${profile.storage_gb !== null ? `${(profile.storage_gb * 1024).toFixed(1)} MB used` : 'size unknown'}`} source="CloudWatch" />
+              <Row label="Running hours" value={schedule?.active ? `${schedule.description} · ${profile.monthly_hours} h/month` : `Always on · ${profile.monthly_hours} h/month`} source={schedule?.active ? 'EventBridge' : 'DocumentDB API'} />
+              <Row label="Backups" value={`${cluster.backup_retention_days} day retention · ${cluster.storage_encrypted ? 'encrypted' : 'not encrypted'}`} source="DocumentDB API" />
+              <Row label="Usage" value={metrics && metrics.running_hours > 0
+                ? `${profile.operations_per_running_hour.toLocaleString(undefined, { maximumFractionDigits: 1 })} ops and ${Math.round(profile.billed_ios_per_running_hour).toLocaleString()} billed I/Os per running hour · CPU ${profile.cpu_avg_percent?.toFixed(1)}% avg`
+                : 'No running hours recorded in the last 7 days'} source="CloudWatch" />
+              {metrics && metrics.running_hours < 24 && (
+                <p style={{ fontSize: '0.76rem', color: 'var(--color-text-muted)', marginTop: '0.6rem' }}>
+                  <Info size={12} style={{ verticalAlign: '-2px' }} /> Usage figures are based on {metrics.running_hours} running hours so far and will settle as more data accumulates.
+                </p>
+              )}
+            </div>
+
+            {/* Cost model */}
+            <div className="card">
+              <div className="card-header"><h3 className="card-title">Monthly cost model</h3><span style={SOURCE_CHIP}>{rates?.source}</span></div>
+              <div className="table-responsive">
+                <table className="table">
+                  <thead><tr><th>Component</th><th>How it is calculated</th><th style={{ textAlign: 'right' }}>Per month</th></tr></thead>
+                  <tbody>
+                    {model.components.map(c => (
+                      <tr key={c.key}>
+                        <td style={{ fontWeight: 550 }}>{c.label}</td>
+                        <td style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)' }}>{c.formula}</td>
+                        <td style={{ textAlign: 'right' }}>{formatSmallUsd(c.monthly)}</td>
+                      </tr>
+                    ))}
+                    <tr>
+                      <td style={{ fontWeight: 700 }}>Total</td><td />
+                      <td style={{ textAlign: 'right', fontWeight: 700 }}>{formatUsd(model.monthly_total)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p style={{ fontSize: '0.76rem', color: 'var(--color-text-muted)', marginTop: '0.6rem' }}>
+                Model of the DocumentDB cluster only, at on-demand list prices before credits. The API server, disk and IPv4 address are billed separately (see Cost Monitoring).
+              </p>
+            </div>
+          </div>
+
+          {/* Recommendations */}
+          <div className="card">
+            <div className="card-header">
+              <div>
+                <h3 className="card-title">Recommendations</h3>
+                <p style={{ fontSize: '0.8rem', marginTop: '0.2rem' }}>Each one is checked against the live configuration and usage above.</p>
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1rem' }}>
+              {recommendations.map(r => {
+                const meta = STATUS_META[r.status];
+                return (
+                  <div key={r.id} style={{ border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', alignItems: 'flex-start' }}>
+                      <span className={`badge ${meta.badge}`}>{meta.icon}{meta.label}</span>
+                      {r.monthly_savings > 0 && (
+                        <span style={{ fontSize: '0.8rem', fontWeight: 650, color: r.status === 'applied' ? 'var(--color-success-text)' : 'var(--color-text-primary)', whiteSpace: 'nowrap' }}>
+                          {r.status === 'applied' ? 'Saving ' : 'Saves '}{formatUsd(r.monthly_savings)}/mo
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontWeight: 650, fontSize: '0.92rem' }}>{r.title}</div>
+                    <ul style={{ margin: 0, paddingLeft: '1rem', fontSize: '0.8rem', color: 'var(--color-text-secondary)', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                      {r.evidence.map((e, i) => <li key={i}>{e}</li>)}
+                    </ul>
+                    <div style={{ fontSize: '0.8rem' }}><strong>Action:</strong> {r.action}</div>
+                    {r.tradeoff && <div style={{ fontSize: '0.76rem', color: 'var(--color-text-muted)' }}>Trade-off: {r.tradeoff}</div>}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Scenarios */}
+          <div className="card">
+            <div className="card-header">
+              <div>
+                <h3 className="card-title">Scenario comparison</h3>
+                <p style={{ fontSize: '0.8rem', marginTop: '0.2rem' }}>Monthly DocumentDB cost for common configurations, using your real storage and I/O rate.</p>
+              </div>
+            </div>
+            <ScenarioBars scenarios={overview!.scenarios} />
+          </div>
+
+          {/* What-if planner */}
+          {rates && plan && (
+            <div className="card">
+              <div className="card-header">
+                <div>
+                  <h3 className="card-title">What-if planner</h3>
+                  <p style={{ fontSize: '0.8rem', marginTop: '0.2rem' }}>Starts from your live configuration. Changes here are calculations only; nothing in AWS is modified.</p>
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" htmlFor="plan-class">Instance class</label>
+                  <select id="plan-class" className="form-control" value={planClass} onChange={e => setPlanClass(e.target.value)}>
+                    {instanceOptions.map(c => (
+                      <option key={c} value={c}>{c} · ${rates.instance_hourly[planStorage]?.[c]}/h</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" htmlFor="plan-count">Instances</label>
+                  <select id="plan-count" className="form-control" value={planCount} onChange={e => setPlanCount(Number(e.target.value))}>
+                    {[1, 2, 3].map(n => <option key={n} value={n}>{n}{n === 1 ? ' (no replicas)' : ` (${n - 1} replica${n > 2 ? 's' : ''})`}</option>)}
+                  </select>
+                </div>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" htmlFor="plan-hours">Running hours</label>
+                  <select id="plan-hours" className="form-control" value={planPreset} onChange={e => setPlanPreset(e.target.value)}>
+                    {HOUR_PRESETS.map(p => (
+                      <option key={p.id} value={p.id}>
+                        {p.label}{p.id === 'current' ? ` (${profile.monthly_hours} h)` : p.hours ? ` · ${p.hours} h` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  {planPreset === 'custom' && (
+                    <input className="form-control" type="number" min="0" max="730" value={customHours}
+                           onChange={e => setCustomHours(e.target.value)} aria-label="Custom running hours per month" style={{ marginTop: '0.4rem' }} />
+                  )}
+                </div>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" htmlFor="plan-storage">Storage type</label>
+                  <select id="plan-storage" className="form-control" value={planStorage} onChange={e => setPlanStorage(e.target.value)}>
+                    <option value="standard">Standard (pay per I/O)</option>
+                    <option value="iopt1">I/O-Optimized (I/O included)</option>
+                  </select>
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem', alignItems: 'baseline', padding: '1rem 1.1rem', borderRadius: 'var(--radius-md)', background: 'var(--gold-50)', border: '1px solid var(--gold-200)' }}>
+                <div>
+                  <div style={{ fontSize: '0.76rem', color: 'var(--color-text-muted)' }}>Planned monthly cost</div>
+                  <div className="stat-tile-value">{plan.hourlyRate === null ? 'No list price' : formatUsd(plan.total)}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.76rem', color: 'var(--color-text-muted)' }}>Compared with today</div>
+                  <div style={{ fontSize: '1.15rem', fontWeight: 650, color: planUnchanged ? 'var(--color-text-primary)' : planDelta < 0 ? 'var(--color-success-text)' : 'var(--color-danger-text)' }}>
+                    {planUnchanged ? 'No change' : `${planDelta < 0 ? '−' : '+'}${formatUsd(Math.abs(planDelta))}/mo`}
+                  </div>
+                </div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>
+                  Instances {formatUsd(plan.instance)} · Storage {formatSmallUsd(plan.storage)} · I/O {formatSmallUsd(plan.io)} · {planHours.toFixed(0)} h/month
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Gemini advisor */}
+          <div className="card">
+            <div className="card-header">
+              <div>
+                <h3 className="card-title">AI advisor</h3>
+                <p style={{ fontSize: '0.8rem', marginTop: '0.2rem' }}>Gemini reviews this deployment's real configuration and usage and suggests improvements.</p>
+              </div>
+              <button className="btn btn-gold btn-sm" onClick={getAdvice} disabled={advising}>
+                {advising ? <Loader2 size={14} className="spin" /> : <Sparkles size={14} />}
+                {advice ? 'Ask again' : 'Get Gemini advice'}
+              </button>
+            </div>
+            {adviceError && <div className="alert alert-danger" style={{ margin: 0 }}><AlertTriangle size={16} /> {adviceError}</div>}
+            {!advice && !adviceError && <p style={{ fontSize: '0.86rem' }}>No advice requested yet.</p>}
+            {advice && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+                <span className={`badge ${advice.is_ai_powered ? 'badge-gold' : 'badge-neutral'}`} style={{ alignSelf: 'flex-start' }}>
+                  {advice.is_ai_powered ? `Gemini (${advice.gemini_model})` : 'Rule-based advice (Gemini unavailable)'}
+                </span>
+                <p style={{ fontSize: '0.9rem', color: 'var(--color-text-primary)' }}>{advice.gemini_summary}</p>
+                {advice.recommendations.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                    {advice.recommendations.map(r => (
+                      <div key={r.id} style={{ borderLeft: '3px solid var(--gold-400)', paddingLeft: '0.8rem' }}>
+                        <div style={{ fontWeight: 650, fontSize: '0.88rem' }}>{r.title}</div>
+                        <div style={{ fontSize: '0.82rem', color: 'var(--color-text-secondary)' }}>{r.explanation}</div>
+                        <div style={{ fontSize: '0.8rem', marginTop: '0.2rem' }}><strong>Action:</strong> {r.proposed_action}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {advice.risks && advice.risks.length > 0 && (
+                  <div>
+                    <div className="eyebrow" style={{ marginBottom: '0.35rem' }}>Risks</div>
+                    <ul style={{ margin: 0, paddingLeft: '1.1rem', fontSize: '0.84rem' }}>{advice.risks.map((r, i) => <li key={i}>{r}</li>)}</ul>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </>
       )}
     </div>
   );

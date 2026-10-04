@@ -917,3 +917,14 @@
 .landing-container .h-5 { height: 1.25rem; }
 .landing-container .text-emerald-400 { color: var(--gold-400); }
 .landing-container .text-blue-400 { color: #7fa6f0; }
+
+/* Two-column variant for the project brief (2 use cases, 2 bottlenecks) */
+.landing-container .landing-bento-grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+@media (max-width: 760px) {
+  .landing-container .landing-bento-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}

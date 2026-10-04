@@ -287,7 +287,7 @@ export const AiQueryAssistantPage: React.FC = () => {
                 ) : (
                   <span className="badge badge-warning" style={{ fontSize: '0.7rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
                     <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#c9a23a' }} />
-                    {engineName} Offline (Simulation)
+                    {engineName} Offline
                   </span>
                 )}
               </div>

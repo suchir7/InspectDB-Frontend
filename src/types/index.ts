@@ -475,7 +475,7 @@ export interface CostAnalysisResult {
   recommendations: Recommendation[];
   missing_information: string[];
   is_cached: boolean;
-  is_demo_mode: boolean;
+  is_ai_powered: boolean;
   gemini_model: string;
 }
 
@@ -620,4 +620,180 @@ export interface CostAlertConfig {
   description: string;
   enabled: boolean;
   triggerCondition: string;
+}
+
+// ============================================================================
+// Live AWS cost & usage data (GET /api/cost/live)
+// ============================================================================
+export interface LiveSection<T> {
+  data: T | null;
+  error: string | null;
+  fetched_at: string | null;
+}
+
+export interface LiveCluster {
+  cluster_id: string;
+  region: string;
+  status: string;
+  engine_version: string;
+  storage_type: string; // 'standard' | 'iopt1'
+  backup_retention_days: number;
+  storage_encrypted: boolean;
+  deletion_protection: boolean;
+  created_at: string | null;
+  instances: { id: string; instance_class: string; status: string; availability_zone?: string }[];
+}
+
+export interface LiveScheduleEntry {
+  name: string;
+  expression: string;
+  timezone: string;
+  state: string;
+}
+
+export interface LiveSchedule {
+  start: LiveScheduleEntry | null;
+  stop: LiveScheduleEntry | null;
+  active: boolean;
+  weekly_hours: number | null;
+  monthly_hours: number | null;
+  description: string | null;
+}
+
+export interface LiveMetricsDay {
+  date: string;
+  running_hours: number;
+  operations: number;
+  billed_ios: number;
+  cpu_avg: number | null;
+}
+
+export interface LiveMetrics {
+  window_days: number;
+  window_start: string;
+  window_end: string;
+  running_hours: number;
+  cpu_avg_percent: number | null;
+  cpu_peak_percent: number | null;
+  connections_avg: number | null;
+  storage_bytes: number | null;
+  storage_gb: number | null;
+  billed_ios: number;
+  operations: number;
+  read_operations?: number;
+  write_operations?: number;
+  cpu_credits_charged: number;
+  daily: LiveMetricsDay[];
+}
+
+export interface LiveRates {
+  source: string;
+  region: string;
+  instance_hourly: Record<string, Record<string, number>>;
+  storage_gb_month: Record<string, number>;
+  io_per_million: number | null;
+  backup_gb_month: number | null;
+  cpu_credit_vcpu_hour: number | null;
+}
+
+export interface LiveCostDay {
+  date: string;
+  total: number;
+  components: Record<string, number>;
+}
+
+export interface LiveCostComponent {
+  key: string;
+  label: string;
+  month_to_date: number;
+  last_30_days: number;
+}
+
+export interface LiveCosts {
+  currency: string;
+  daily: LiveCostDay[];
+  components: LiveCostComponent[];
+  month_to_date: { usage: number; credits: number; tax: number; net: number };
+  documentdb_month_to_date: number;
+  average_daily_last_7_days: number;
+  projected_month_usage: number;
+  days_in_month: number;
+  days_elapsed: number;
+  latest_cost_date: string | null;
+  note: string;
+}
+
+export interface LiveProfile {
+  instance_class: string | null;
+  instance_count: number;
+  storage_type: string;
+  region: string;
+  backup_retention_days: number | null;
+  monthly_hours: number;
+  monthly_hours_source: string;
+  storage_gb: number | null;
+  billed_ios_per_running_hour: number;
+  operations_per_running_hour: number;
+  monthly_io_requests: number;
+  cpu_avg_percent: number | null;
+  cpu_peak_percent: number | null;
+}
+
+export interface LiveModelComponent {
+  key: string;
+  label: string;
+  monthly: number;
+  formula: string;
+}
+
+export interface LiveCostModel {
+  instance_class: string;
+  instance_count: number;
+  monthly_hours: number;
+  storage_type: string;
+  components: LiveModelComponent[];
+  monthly_total: number;
+}
+
+export interface LiveScenario {
+  id: string;
+  label: string;
+  monthly_hours: number;
+  instance_class: string;
+  storage_type: string;
+  monthly_total: number;
+  difference_vs_current: number;
+}
+
+export type LiveRecommendationStatus = 'applied' | 'recommended' | 'optional' | 'not_needed' | 'warning';
+
+export interface LiveRecommendation {
+  id: string;
+  category: string;
+  status: LiveRecommendationStatus;
+  title: string;
+  monthly_savings: number;
+  evidence: string[];
+  action: string;
+  tradeoff: string | null;
+}
+
+export interface LiveCostOverview {
+  enabled: boolean;
+  available: boolean;
+  reason: string | null;
+  region: string;
+  cluster_id: string | null;
+  sections: Partial<{
+    cluster: LiveSection<LiveCluster>;
+    schedule: LiveSection<LiveSchedule>;
+    metrics: LiveSection<LiveMetrics>;
+    pricing: LiveSection<LiveRates>;
+    costs: LiveSection<LiveCosts>;
+  }>;
+  rates: LiveRates | null;
+  profile: LiveProfile | null;
+  model: LiveCostModel | null;
+  scenarios: LiveScenario[];
+  recommendations: LiveRecommendation[];
 }

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate, NavLink, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { AiServiceStatus, HealthStatus } from '../../types';
 import {
   Menu,
   X,
@@ -29,9 +30,34 @@ import {
 
 interface TopNavbarProps {
   backendOnline: boolean;
+  health?: HealthStatus | null;
+  aiStatus?: AiServiceStatus | null;
 }
 
-export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
+export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline, health, aiStatus }) => {
+  // Notifications reflect real system state only
+  const db = health?.database;
+  const notices: { tone: 'ok' | 'warn' | 'info'; title: string; detail: string }[] = [];
+  if (!backendOnline) {
+    notices.push({ tone: 'warn', title: 'API server unreachable', detail: 'The backend did not answer the last health check.' });
+  } else if (db) {
+    if (db.mode === 'documentdb') {
+      notices.push(db.connected
+        ? { tone: 'ok', title: 'Amazon DocumentDB connected', detail: `${db.database_name}.${db.collection}` }
+        : { tone: 'warn', title: 'DocumentDB paused or unreachable', detail: 'It may be outside its scheduled running hours.' });
+    } else {
+      notices.push({ tone: 'info', title: db.mode === 'mongodb' ? 'Local MongoDB storage' : 'In-memory storage', detail: db.message });
+    }
+  }
+  if (aiStatus) {
+    notices.push(aiStatus.gemini_configured
+      ? { tone: 'ok', title: 'Gemini AI configured', detail: `Model ${aiStatus.model}` }
+      : { tone: 'info', title: 'Gemini AI not configured', detail: 'AI features use rule-based fallbacks.' });
+  }
+  const hasWarning = notices.some(n => n.tone === 'warn');
+  const dbPill = !backendOnline ? 'Offline' : db?.mode === 'documentdb' ? (db.connected ? 'DocumentDB live' : 'DocumentDB paused') : db?.mode === 'mongodb' ? 'Local MongoDB' : 'In-memory';
+  const pillHealthy = backendOnline && (db?.mode !== 'documentdb' || db.connected);
+
   const location = useLocation();
   const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
@@ -356,11 +382,11 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
               padding: '0.35rem 0.75rem',
               borderRadius: 'var(--radius-full)',
               backgroundColor: 'rgba(255, 255, 255, 0.04)',
-              border: `1px solid ${backendOnline ? 'rgba(201, 162, 58, 0.3)' : 'rgba(194, 59, 59, 0.35)'}`,
+              border: `1px solid ${pillHealthy ? 'rgba(201, 162, 58, 0.3)' : 'rgba(194, 59, 59, 0.35)'}`,
               fontSize: '0.75rem',
               fontWeight: 600,
               whiteSpace: 'nowrap',
-              color: backendOnline ? 'var(--gold-300)' : '#e07a7a',
+              color: pillHealthy ? 'var(--gold-300)' : '#e07a7a',
               textDecoration: 'none'
             }}
             title="Amazon DocumentDB & Neon Auth Status"
@@ -371,11 +397,11 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
                 width: 7,
                 height: 7,
                 borderRadius: '50%',
-                backgroundColor: backendOnline ? '#22a06b' : '#d04545',
-                boxShadow: backendOnline ? '0 0 8px #22a06b' : 'none'
+                backgroundColor: pillHealthy ? '#22a06b' : '#d04545',
+                boxShadow: pillHealthy ? '0 0 8px #22a06b' : 'none'
               }}
             />
-            <span>{backendOnline ? 'DocDB + Neon' : 'Offline'}</span>
+            <span>{dbPill}</span>
           </Link>
 
           {/* Notifications Dropdown */}
@@ -402,18 +428,19 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
               className="topbar-icon-btn"
             >
               <Bell size={17} />
-              <span
-                style={{
-                  position: 'absolute',
-                  top: 7,
-                  right: 7,
-                  width: 7,
-                  height: 7,
-                  backgroundColor: '#3a6fe0',
-                  borderRadius: '50%',
-                  boxShadow: '0 0 6px #3a6fe0'
-                }}
-              />
+              {hasWarning && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: 7,
+                    right: 7,
+                    width: 7,
+                    height: 7,
+                    backgroundColor: '#e07a7a',
+                    borderRadius: '50%'
+                  }}
+                />
+              )}
             </button>
 
             {showNotifications && (
@@ -440,42 +467,22 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ backendOnline }) => {
                     alignItems: 'center'
                   }}
                 >
-                  <span style={{ fontWeight: 700, fontSize: '0.85rem', color: '#f5f7fa' }}>System Notifications</span>
-                  <span style={{ fontSize: '0.7rem', color: '#e6cf8f', fontWeight: 600 }}>Active Session</span>
+                  <span style={{ fontWeight: 700, fontSize: '0.85rem', color: '#f5f7fa' }}>System status</span>
+                  <span style={{ fontSize: '0.7rem', color: '#e6cf8f', fontWeight: 600 }}>{currentUser?.email}</span>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', marginTop: '0.5rem' }}>
-                  <div
-                    style={{
-                      padding: '0.6rem',
-                      borderRadius: 'var(--radius-md)',
-                      backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                      fontSize: '0.78rem',
-                      display: 'flex',
-                      gap: '0.6rem'
-                    }}
-                  >
-                    <CheckCircle2 size={16} color="#22a06b" style={{ flexShrink: 0, marginTop: 2 }} />
-                    <div>
-                      <div style={{ fontWeight: 600, color: '#f5f7fa' }}>Neon PostgreSQL Authenticated</div>
-                      <div style={{ fontSize: '0.72rem', color: '#8e97ac' }}>User isolation active on user ID {currentUser?.id?.slice(0, 8)}...</div>
+                  {notices.length === 0 && <div style={{ fontSize: '0.78rem', color: '#8e97ac', padding: '0.4rem' }}>Checking status…</div>}
+                  {notices.map(n => (
+                    <div key={n.title} style={{ padding: '0.6rem', borderRadius: 'var(--radius-md)', backgroundColor: 'rgba(255, 255, 255, 0.04)', fontSize: '0.78rem', display: 'flex', gap: '0.6rem' }}>
+                      {n.tone === 'ok' ? <CheckCircle2 size={16} color="#22a06b" style={{ flexShrink: 0, marginTop: 2 }} />
+                        : n.tone === 'warn' ? <AlertTriangle size={16} color="#e07a7a" style={{ flexShrink: 0, marginTop: 2 }} />
+                        : <ShieldCheck size={16} color="#e6cf8f" style={{ flexShrink: 0, marginTop: 2 }} />}
+                      <div>
+                        <div style={{ fontWeight: 600, color: '#f5f7fa' }}>{n.title}</div>
+                        <div style={{ fontSize: '0.72rem', color: '#8e97ac' }}>{n.detail}</div>
+                      </div>
                     </div>
-                  </div>
-                  <div
-                    style={{
-                      padding: '0.6rem',
-                      borderRadius: 'var(--radius-md)',
-                      backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                      fontSize: '0.78rem',
-                      display: 'flex',
-                      gap: '0.6rem'
-                    }}
-                  >
-                    <ShieldCheck size={16} color="#3a6fe0" style={{ flexShrink: 0, marginTop: 2 }} />
-                    <div>
-                      <div style={{ fontWeight: 600, color: '#f5f7fa' }}>DocumentDB Compatibility Ready</div>
-                      <div style={{ fontSize: '0.72rem', color: '#8e97ac' }}>Real-time syntax validation active for Amazon DocumentDB 5.0.</div>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
             )}

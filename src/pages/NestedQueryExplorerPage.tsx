@@ -521,7 +521,7 @@ export const NestedQueryExplorerPage: React.FC = () => {
         </div>
       </div>
 
-      {/* LOCAL DEMO MODE DISCLAIMER */}
+      {/* Storage engine notice */}
       <div style={{
         backgroundColor: '#f3f7fe',
         border: '1px solid #cddcf9',
@@ -538,7 +538,10 @@ export const NestedQueryExplorerPage: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
           <Database size={18} color="#2459c9" style={{ flexShrink: 0 }} />
           <div>
-            <strong>Amazon DocumentDB Nested Query Laboratory (Phase 1):</strong> Queries are currently evaluated against the local variable-schema inspection dataset with full MongoDB dot-notation and $elemMatch semantics. <strong>Live Amazon DocumentDB cluster connection will be enabled in Phase 2.</strong>
+            <strong>Nested Query Laboratory:</strong>{' '}
+            {store.isDocumentDb
+              ? 'Queries run against your inspection documents in the live Amazon DocumentDB cluster, with dot-notation and $elemMatch semantics.'
+              : `Queries run against your inspection documents in the ${store.mode === 'mongodb' ? 'local MongoDB' : 'in-memory'} store, with the same dot-notation and $elemMatch semantics as DocumentDB.`}
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -602,7 +605,7 @@ export const NestedQueryExplorerPage: React.FC = () => {
               Documents Available
             </div>
             <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-text-primary)' }}>
-              {schemaOverview?.total_documents ?? 6}
+              {schemaOverview?.total_documents ?? '—'}
             </div>
           </div>
         </div>
@@ -1434,7 +1437,7 @@ export const NestedQueryExplorerPage: React.FC = () => {
               No Matching Documents Found
             </h4>
             <p style={{ margin: 0, maxWidth: '480px', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
-              Evaluated {conditions.length} condition(s) across 6 sample inspection documents in {activeExecutionTime.toFixed(2)}ms with 0 matches.
+              Evaluated {conditions.length} condition(s) across {schemaOverview?.total_documents ?? 0} inspection document(s) in {activeExecutionTime.toFixed(2)}ms with 0 matches.
             </p>
             <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
               <button

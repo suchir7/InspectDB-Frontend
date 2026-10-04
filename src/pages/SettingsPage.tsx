@@ -148,7 +148,7 @@ export const SettingsPage: React.FC = () => {
             <div style={{ padding: '0.75rem', backgroundColor: 'var(--color-bg-surface-secondary)', borderRadius: 'var(--radius-md)' }}>
               <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>AWS CLUSTER CHARGES</div>
               <div style={{ fontWeight: 700, fontSize: '0.9rem', color: store.clusterCostActive ? '#8a6716' : '#1e8e62' }}>
-                {store.clusterCostActive ? 'Active (Live DocumentDB Cluster)' : '$0.00 (In-Memory Simulation)'}
+                {store.clusterCostActive ? 'Active (live DocumentDB cluster)' : 'None (local store)'}
               </div>
             </div>
           </div>
@@ -156,7 +156,7 @@ export const SettingsPage: React.FC = () => {
           <div className="alert alert-info" style={{ margin: 0, fontSize: '0.8rem' }}>
             <Info size={16} />
             <div>
-              No AWS credentials or secret connection strings are stored or displayed in the client. In Phase 2, DocumentDB URI strings will be supplied strictly via server-side environment variables with TLS encryption (<code>global-bundle.pem</code>).
+              No AWS credentials or connection strings are stored or displayed in the browser. DocumentDB settings are supplied only through server-side environment variables, and connections use TLS (<code>global-bundle.pem</code>).
             </div>
           </div>
         </div>

@@ -10,10 +10,12 @@ export const DemoBanner: React.FC<DemoBannerProps> = ({ message }) => {
   const store = useDocumentStore();
   const defaultMessage = store.isDocumentDb
     ? "Inspection reports are stored as variable-schema, nested JSON documents in a live Amazon DocumentDB cluster."
-    : "Amazon DocumentDB Project Foundation: Displaying demonstration dataset with variable schemas and nested JSON documents. Zero AWS cluster costs incurred in Phase 1.";
+    : store.mode === 'mongodb'
+      ? "Local development: inspection reports are stored in a local MongoDB database."
+      : "Local development: inspection reports are kept in server memory and are lost when the server restarts.";
   const badgeLabel = store.isDocumentDb
     ? (store.connected ? 'DocumentDB Live' : 'DocumentDB Paused / Offline')
-    : 'Local Demo Mode';
+    : store.mode === 'mongodb' ? 'Local MongoDB' : 'In-memory store';
   const statusColor = store.isDocumentDb && !store.connected ? 'var(--color-danger)' : store.isDocumentDb ? 'var(--color-success)' : 'var(--gold-500)';
 
   return (

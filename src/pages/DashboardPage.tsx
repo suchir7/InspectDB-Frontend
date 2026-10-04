@@ -30,7 +30,8 @@ import {
   FolderOpen
 } from 'lucide-react';
 import { api } from '../services/api';
-import { InspectionReport, DashboardStats, SchemaOverviewResponse } from '../types';
+import { InspectionReport, DashboardStats, SchemaOverviewResponse, LiveCostOverview } from '../types';
+import { formatSmallUsd, formatUsd } from '../services/costModel';
 import { StatusBadge, SeverityBadge } from '../components/common/Badge';
 
 interface DomainCardInfo {
@@ -40,10 +41,23 @@ interface DomainCardInfo {
   color: string;
   bgLight: string;
   borderColor: string;
-  telemetryKey: string;
-  sampleFields: string[];
   description: string;
 }
+
+/** Collects dynamic attribute paths (up to 3 levels deep) and custom field keys from a report. */
+const attributePaths = (report: InspectionReport): string[] => {
+  const paths: string[] = [];
+  const walk = (value: unknown, prefix: string, depth: number) => {
+    if (value && typeof value === 'object' && !Array.isArray(value) && depth < 3) {
+      Object.entries(value as Record<string, unknown>).forEach(([k, v]) => walk(v, prefix ? `${prefix}.${k}` : k, depth + 1));
+    } else if (prefix) {
+      paths.push(prefix);
+    }
+  };
+  walk(report.dynamic_attributes ?? {}, '', 0);
+  (report.custom_fields ?? []).forEach(f => f?.key && paths.push(f.key));
+  return paths;
+};
 
 const DOMAIN_CATALOG: DomainCardInfo[] = [
   {
@@ -53,8 +67,6 @@ const DOMAIN_CATALOG: DomainCardInfo[] = [
     color: '#a9801e',
     bgLight: '#fbf5e4',
     borderColor: '#eddba6',
-    telemetryKey: 'electrical_telemetry',
-    sampleFields: ['phases.phase_a.voltage_kv', 'current_amps', 'frequency_hz', 'harmonics_thd_pct'],
     description: 'High-voltage substations, transformers, phase harmonics & thermal loads'
   },
   {
@@ -64,8 +76,6 @@ const DOMAIN_CATALOG: DomainCardInfo[] = [
     color: '#c23b3b',
     bgLight: '#fbeaea',
     borderColor: '#f1c9c9',
-    telemetryKey: 'fire_safety_data',
-    sampleFields: ['suppression_system', 'alarm_panel_status', 'extinguisher_count', 'egress_routes'],
     description: 'Commercial high-rises, emergency egress, suppression valves & smoke sensors'
   },
   {
@@ -75,8 +85,6 @@ const DOMAIN_CATALOG: DomainCardInfo[] = [
     color: '#2459c9',
     bgLight: '#f3f7fe',
     borderColor: '#cddcf9',
-    telemetryKey: 'equipment_telemetry',
-    sampleFields: ['vibration_velocity_mm_s', 'bearing_temp_c', 'operating_hours', 'lubricant_state'],
     description: 'Centrifugal pumps, turbine generators, rotating assemblies & bearing vibration'
   },
   {
@@ -86,8 +94,6 @@ const DOMAIN_CATALOG: DomainCardInfo[] = [
     color: '#a9801e',
     bgLight: '#fcf8ed',
     borderColor: '#f0e2b8',
-    telemetryKey: 'structural_telemetry',
-    sampleFields: ['crack_width_mm', 'deflection_mm', 'load_rating_tons', 'corrosion_rating'],
     description: 'Bridges, concrete piers, load-bearing columns & foundation displacement'
   },
   {
@@ -97,8 +103,6 @@ const DOMAIN_CATALOG: DomainCardInfo[] = [
     color: '#1e8e62',
     bgLight: '#e9f6f0',
     borderColor: '#b9e2cf',
-    telemetryKey: 'hazmat_telemetry',
-    sampleFields: ['voc_ppm', 'containment_integrity', 'ph_level', 'spill_mitigation_ready'],
     description: 'Chemical processing, toxic airborne VOC levels, containment seals & runoff'
   },
   {
@@ -108,8 +112,6 @@ const DOMAIN_CATALOG: DomainCardInfo[] = [
     color: '#2459c9',
     bgLight: '#f3f7fe',
     borderColor: '#cddcf9',
-    telemetryKey: 'hvac_telemetry',
-    sampleFields: ['chilled_water_temp_c', 'refrigerant_psi', 'airflow_cfm', 'cop_efficiency'],
     description: 'Rooftop chillers, variable air volume units, compressor delta & airflow'
   }
 ];
@@ -119,6 +121,8 @@ export const DashboardPage: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [schemaOverview, setSchemaOverview] = useState<SchemaOverviewResponse | null>(null);
   const [recentReports, setRecentReports] = useState<InspectionReport[]>([]);
+  const [catalogReports, setCatalogReports] = useState<InspectionReport[]>([]);
+  const [liveCost, setLiveCost] = useState<LiveCostOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
@@ -129,13 +133,16 @@ export const DashboardPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const [statsData, reportsData, schemaData] = await Promise.all([
+      const [statsData, reportsData, schemaData, catalogData] = await Promise.all([
         api.getDashboardStats(),
         api.getReports({ limit: 10, sort_by: 'inspection_date', sort_order: 'desc' }),
-        api.getDocumentSchema().catch(() => null)
+        api.getDocumentSchema().catch(() => null),
+        api.getReports({ limit: 100, sort_by: 'inspection_date', sort_order: 'desc' }).catch(() => null)
       ]);
       setStats(statsData);
       setRecentReports(reportsData.reports);
+      setCatalogReports(catalogData?.reports ?? reportsData.reports);
+      api.getLiveCostOverview().then(setLiveCost).catch(() => setLiveCost({ enabled: false, available: false } as LiveCostOverview));
       if (schemaData) {
         setSchemaOverview(schemaData);
       }
@@ -157,6 +164,27 @@ export const DashboardPage: React.FC = () => {
   };
 
   const totalReports = stats?.total_reports ?? 0;
+
+  // Domain catalog: only categories present in the user's data, with attributes found in their documents
+  const domainCards = Object.entries(stats?.category_distribution ?? {})
+    .filter(([, count]) => count > 0)
+    .sort((a, b) => b[1] - a[1])
+    .map(([category, count]) => {
+      const preset = DOMAIN_CATALOG.find(d => d.categoryKey.toLowerCase() === category.toLowerCase());
+      const frequency = new Map<string, number>();
+      catalogReports
+        .filter(r => (r.category || '').toLowerCase() === category.toLowerCase())
+        .forEach(r => attributePaths(r).forEach(path => frequency.set(path, (frequency.get(path) ?? 0) + 1)));
+      const fields = [...frequency.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6).map(([path]) => path);
+      return {
+        count,
+        fields,
+        domain: preset ?? {
+          name: category, categoryKey: category, icon: <Layers size={18} />, color: '#8a6716',
+          bgLight: '#fcf8ed', borderColor: '#f0e2b8', description: 'Custom inspection category.'
+        }
+      };
+    });
   const filteredReports = selectedCategoryFilter === 'all'
     ? recentReports
     : recentReports.filter(r => r.category.toLowerCase() === selectedCategoryFilter.toLowerCase());
@@ -180,7 +208,7 @@ export const DashboardPage: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
           <Info size={17} color="#8a6716" style={{ flexShrink: 0 }} />
           <span>
-            <strong>Local Demo Mode:</strong> Dashboard metrics are calculated dynamically from the application's local inspection repository. No live Amazon DocumentDB cluster, CloudWatch telemetry, or live AWS billing is currently connected.
+            <strong>Local development:</strong> dashboard metrics come from the local inspection store. No Amazon DocumentDB cluster is connected to this server.
           </span>
         </div>
         <span style={{
@@ -194,7 +222,7 @@ export const DashboardPage: React.FC = () => {
           whiteSpace: 'nowrap',
           marginLeft: '1rem'
         }}>
-          Phase 1 Architecture
+          Local store
         </span>
       </div>
       )}
@@ -353,10 +381,12 @@ export const DashboardPage: React.FC = () => {
             </div>
             <div>
               <div style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>
-                Estimated Cost Sizing Model
+                DocumentDB Cost (Live)
               </div>
-              <div style={{ fontSize: '0.825rem', fontWeight: 700, color: '#a9801e' }}>
-                $0.00/mo (Local Dev) • $13.98/mo (Scheduled Dev Estimate)
+              <div style={{ fontSize: '0.825rem', fontWeight: 700, color: '#8a6716' }}>
+                {liveCost?.model
+                  ? `${formatUsd(liveCost.model.monthly_total)}/mo modelled${liveCost.sections.costs?.data ? ` · ${formatSmallUsd(liveCost.sections.costs.data.documentdb_month_to_date)} billed this month` : ''}`
+                  : liveCost ? 'Live AWS cost data not connected' : 'Loading…'}
               </div>
             </div>
           </div>
@@ -374,7 +404,7 @@ export const DashboardPage: React.FC = () => {
             textDecoration: 'none'
           }}
         >
-          <span>Configure Workload & Sizing</span>
+          <span>Open Cost Optimizer</span>
           <ChevronRight size={14} />
         </Link>
       </div>
@@ -392,7 +422,7 @@ export const DashboardPage: React.FC = () => {
               <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Total Reports
               </div>
-              <div style={{ fontSize: '2.15rem', fontWeight: 600, fontFamily: 'var(--font-display)', letterSpacing: '-0.01em', color: 'var(--color-text-primary)', marginTop: '0.2rem', lineHeight: 1.1 }}>
+              <div style={{ fontSize: '2rem', fontWeight: 650, letterSpacing: '-0.02em', color: 'var(--color-text-primary)', marginTop: '0.2rem', lineHeight: 1.1 }}>
                 {stats?.total_reports ?? 0}
               </div>
             </div>
@@ -424,7 +454,7 @@ export const DashboardPage: React.FC = () => {
               <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 High & Critical Findings
               </div>
-              <div style={{ fontSize: '2.15rem', fontWeight: 600, fontFamily: 'var(--font-display)', letterSpacing: '-0.01em', color: '#c23b3b', marginTop: '0.2rem', lineHeight: 1.1 }}>
+              <div style={{ fontSize: '2rem', fontWeight: 650, letterSpacing: '-0.02em', color: '#c23b3b', marginTop: '0.2rem', lineHeight: 1.1 }}>
                 {stats?.high_severity_findings ?? 0}
               </div>
             </div>
@@ -454,7 +484,7 @@ export const DashboardPage: React.FC = () => {
               <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Pending Review
               </div>
-              <div style={{ fontSize: '2.15rem', fontWeight: 600, fontFamily: 'var(--font-display)', letterSpacing: '-0.01em', color: '#a9801e', marginTop: '0.2rem', lineHeight: 1.1 }}>
+              <div style={{ fontSize: '2rem', fontWeight: 650, letterSpacing: '-0.02em', color: '#a9801e', marginTop: '0.2rem', lineHeight: 1.1 }}>
                 {stats?.reports_requiring_attention ?? 0}
               </div>
             </div>
@@ -484,7 +514,7 @@ export const DashboardPage: React.FC = () => {
               <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Completed & Passed
               </div>
-              <div style={{ fontSize: '2.15rem', fontWeight: 600, fontFamily: 'var(--font-display)', letterSpacing: '-0.01em', color: '#1e8e62', marginTop: '0.2rem', lineHeight: 1.1 }}>
+              <div style={{ fontSize: '2rem', fontWeight: 650, letterSpacing: '-0.02em', color: '#1e8e62', marginTop: '0.2rem', lineHeight: 1.1 }}>
                 {stats?.completed_inspections ?? 0}
               </div>
             </div>
@@ -534,7 +564,7 @@ export const DashboardPage: React.FC = () => {
               Polymorphic Inspection Domains & Telemetry Schemas
             </h3>
             <p style={{ fontSize: '0.8rem', marginTop: '0.2rem', color: 'var(--color-text-secondary)' }}>
-              Heterogeneous inspection categories with polymorphic telemetry schemas stored in a single collection. Counts derived from repository.
+              Categories in your inspection documents, with the variable-schema attributes found in them. All stored in one collection.
             </p>
           </div>
           <Link to="/nested-query" className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
@@ -548,8 +578,12 @@ export const DashboardPage: React.FC = () => {
           gridTemplateColumns: 'repeat(auto-fit, minmax(310px, 1fr))',
           gap: '1rem'
         }}>
-          {DOMAIN_CATALOG.map((domain) => {
-            const count = stats?.category_distribution?.[domain.categoryKey] || 0;
+          {domainCards.length === 0 && (
+            <div style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: '0.86rem', gridColumn: '1 / -1' }}>
+              No inspection reports yet. <Link to="/create-inspection">Create your first report</Link> to see its categories and attributes here.
+            </div>
+          )}
+          {domainCards.map(({ domain, count, fields }) => {
             const isSelected = selectedCategoryFilter.toLowerCase() === domain.categoryKey.toLowerCase();
             return (
               <div
@@ -612,10 +646,11 @@ export const DashboardPage: React.FC = () => {
                   border: '1px solid var(--color-border)'
                 }}>
                   <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-text-muted)', marginBottom: '0.3rem', textTransform: 'uppercase' }}>
-                    Polymorphic Schema Attributes:
+                    Attributes in your documents:
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
-                    {domain.sampleFields.map(f => (
+                    {fields.length === 0 && <span style={{ fontSize: '0.74rem', color: 'var(--color-text-muted)' }}>No dynamic attributes yet</span>}
+                    {fields.map(f => (
                       <code key={f} style={{
                         fontSize: '0.68rem',
                         padding: '0.15rem 0.35rem',
@@ -811,17 +846,16 @@ export const DashboardPage: React.FC = () => {
             >
               All Domains ({recentReports.length})
             </button>
-            {DOMAIN_CATALOG.map(d => {
-              const count = recentReports.filter(r => r.category.toLowerCase() === d.categoryKey.toLowerCase()).length;
-              if (count === 0) return null;
+            {[...new Set(recentReports.map(r => r.category))].map(category => {
+              const count = recentReports.filter(r => r.category === category).length;
               return (
                 <button
-                  key={d.categoryKey}
-                  onClick={() => setSelectedCategoryFilter(d.categoryKey)}
-                  className={`btn btn-sm ${selectedCategoryFilter.toLowerCase() === d.categoryKey.toLowerCase() ? 'btn-primary' : 'btn-secondary'}`}
+                  key={category}
+                  onClick={() => setSelectedCategoryFilter(category)}
+                  className={`btn btn-sm ${selectedCategoryFilter.toLowerCase() === category.toLowerCase() ? 'btn-primary' : 'btn-secondary'}`}
                   style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem' }}
                 >
-                  {d.categoryKey} ({count})
+                  {category} ({count})
                 </button>
               );
             })}

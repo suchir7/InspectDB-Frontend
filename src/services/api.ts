@@ -18,11 +18,8 @@ import {
   RawQueryResponse,
   ExplainQueryRequest,
   ExplainQueryResponse,
-  CostTrendResponse,
   CostDriverDetail,
   CostAnomalyReport,
-  CostMonitoringSnapshot,
-  CostComparisonReport,
   OptimizationSimulationRequest,
   OptimizationSimulationResponse,
   CostMonitoringAnalysisRequest,
@@ -31,7 +28,8 @@ import {
   AuthResponse,
   RegisterInput,
   LoginInput,
-  MongoTestResult
+  MongoTestResult,
+  LiveCostOverview
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:8000/api');
@@ -294,6 +292,14 @@ export const api = {
   },
 
   // AI Cost Optimizer & Deployment Advisor APIs
+  async getLiveCostOverview(refresh = false): Promise<LiveCostOverview> {
+    const res = await fetch(`${API_BASE_URL}/cost/live${refresh ? '?refresh=true' : ''}`, {
+      method: 'GET',
+      headers: getAuthHeaders()
+    });
+    return handleResponse<LiveCostOverview>(res);
+  },
+
   async calculateCostEstimate(workload: WorkloadInput): Promise<CostEstimateResponse> {
     const res = await fetch(`${API_BASE_URL}/cost/estimate`, {
       method: 'POST',
@@ -310,40 +316,6 @@ export const api = {
       body: JSON.stringify(request)
     });
     return handleResponse<CostAnalysisResult>(res);
-  },
-
-  async getCostAnalysisHistory(): Promise<CostAnalysisResult[]> {
-    const res = await fetch(`${API_BASE_URL}/cost/history`, {
-      headers: getAuthHeaders()
-    });
-    return handleResponse<CostAnalysisResult[]>(res);
-  },
-
-  async updateRecommendationStatus(recId: string, status: 'pending' | 'applied' | 'dismissed'): Promise<{ message: string; id: string; status: string }> {
-    const res = await fetch(`${API_BASE_URL}/cost/recommendations/${encodeURIComponent(recId)}/status`, {
-      method: 'PATCH',
-      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ status })
-    });
-    return handleResponse<{ message: string; id: string; status: string }>(res);
-  },
-
-  async clearCostHistory(): Promise<{ message: string }> {
-    const res = await fetch(`${API_BASE_URL}/cost/history`, {
-      method: 'DELETE',
-      headers: getAuthHeaders()
-    });
-    return handleResponse<{ message: string }>(res);
-  },
-
-  // AWS DocumentDB Cost Monitoring APIs
-  async getCostTrend(workload: WorkloadInput, timeframe: '7d' | '30d' | '90d' = '30d'): Promise<CostTrendResponse> {
-    const res = await fetch(`${API_BASE_URL}/cost/monitoring/trend`, {
-      method: 'POST',
-      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ workload, timeframe })
-    });
-    return handleResponse<CostTrendResponse>(res);
   },
 
   async getCostDrivers(workload: WorkloadInput): Promise<CostDriverDetail[]> {
@@ -382,39 +354,4 @@ export const api = {
     return handleResponse<CostMonitoringAnalysisResponse>(res);
   },
 
-  async getMonitoringSnapshots(): Promise<CostMonitoringSnapshot[]> {
-    const res = await fetch(`${API_BASE_URL}/cost/monitoring/snapshots`, {
-      headers: getAuthHeaders()
-    });
-    return handleResponse<CostMonitoringSnapshot[]>(res);
-  },
-
-  async createMonitoringSnapshot(title: string, workload: WorkloadInput): Promise<CostMonitoringSnapshot> {
-    const res = await fetch(`${API_BASE_URL}/cost/monitoring/snapshots`, {
-      method: 'POST',
-      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ title, workload })
-    });
-    return handleResponse<CostMonitoringSnapshot>(res);
-  },
-
-  async deleteMonitoringSnapshot(snapshotId: string): Promise<{ message: string }> {
-    const res = await fetch(`${API_BASE_URL}/cost/monitoring/snapshots/${encodeURIComponent(snapshotId)}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders()
-    });
-    return handleResponse<{ message: string }>(res);
-  },
-
-  async compareSnapshots(baselineSnapshotId: string, currentSnapshotId: string): Promise<CostComparisonReport> {
-    const res = await fetch(`${API_BASE_URL}/cost/monitoring/compare`, {
-      method: 'POST',
-      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({
-        baseline_snapshot_id: baselineSnapshotId,
-        current_snapshot_id: currentSnapshotId
-      })
-    });
-    return handleResponse<CostComparisonReport>(res);
-  }
 };

@@ -892,3 +892,79 @@ select.form-control {
   background: var(--ink-400);
   background-clip: padding-box;
 }
+
+/* ==========================================================================
+   Cost charts: series colors validated for colorblind separation and
+   lightness (light on white, dark on navy). Gold has <3:1 contrast on white,
+   so every chart also offers a table view and value labels.
+   ========================================================================== */
+.cost-viz {
+  --series-docdb: #2459C9;
+  --series-server: #C9A23A;
+  --series-other: #008F8A;
+  --viz-grid: var(--ink-100);
+  --viz-axis: var(--ink-200);
+  --viz-surface: var(--color-bg-surface);
+  --viz-muted-bar: var(--ink-300);
+}
+
+[data-theme="dark"] .cost-viz {
+  --series-docdb: #3A6FE0;
+  --series-server: #B08826;
+  --series-other: #0F9E98;
+  --viz-grid: #16264A;
+  --viz-axis: #1C2B4F;
+  --viz-muted-bar: #2A3D68;
+}
+
+.viz-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: var(--navy-900);
+  color: #EEF1F7;
+  border: 1px solid rgba(201, 162, 58, 0.3);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: 0.55rem 0.7rem;
+  font-size: 0.75rem;
+  min-width: 170px;
+  z-index: 5;
+}
+
+.viz-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.78rem;
+  color: var(--color-text-secondary);
+}
+
+.viz-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.viz-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.stat-tile-value {
+  font-family: var(--font-sans);
+  font-size: 1.65rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+  line-height: 1.15;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 0.9s linear infinite;
+}
